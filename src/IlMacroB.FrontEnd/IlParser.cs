@@ -1,13 +1,7 @@
-﻿namespace IlMacroB.FrontEnd;
+﻿using System.Reflection;
+using System.Reflection.Emit;
 
-public class IlInstruction
-{
-    public int Offset { get; set; }
-    public OpCode OpCode { get; set; }
-    public object Operand { get; set; }
-
-    public override string ToString() => $"{Offset:X4}: {OpCode} {Operand}";
-}
+namespace Rollomatic.IlMacroB.FrontEnd;
 
 public static class IlParser
 {
@@ -35,19 +29,20 @@ public static class IlParser
         }
 
         var il = body.GetILAsByteArray();
-        Module module = method.Module;
-        List<IlInstruction> instructions = new();
-        int position = 0;
+        var module = method.Module;
+        var instructions = new List<IlInstruction>();
+        var position = 0;
 
         while (position < il.Length)
         {
-            int startOffset = position;
-            short opValue = il[position++];
+            var startOffset = position;
+            var opValue = (short)il[position++];
 
             // Handle two-byte opcodes (prefixes like 0xFE)
             if (opValue == 0xFE && position < il.Length)
             {
                 opValue = (short)((opValue << 8) | il[position++]);
+
             }
 
             if (!OpCodeMap.TryGetValue(opValue, out OpCode opCode))
@@ -56,20 +51,37 @@ public static class IlParser
             }
 
             // Read the varying-length operand based on its metadata type
-            object operand = ReadOperand(il, ref position, opCode.OperandType, module);
+            var operand = ReadOperand(il, ref position, opCode.OperandType, module);
 
-            instructions.Add(new IlInstruction
-            {
-                Offset = startOffset,
-                OpCode = opCode,
-                Operand = operand
-            });
+            instructions.Add(
+                new IlInstruction(
+                    startOffset,
+                    opCode,
+                    position - startOffset,
+                    operand));
         }
+
+        CalculateAbsoluteTargets(instructions);
 
         return instructions;
     }
 
-    private static object ReadOperand(byte[] il, ref int pos, OperandType type, Module module)
+    private static void CalculateAbsoluteTargets(List<IlInstruction> instructions)
+    {
+        foreach (var inst in instructions)
+        {
+            if (inst.OpCode.OperandType == OperandType.ShortInlineBrTarget && inst.Operand is int relShort)
+            {
+                inst.AbsoluteTarget = inst.NextInstructionOffset + relShort;
+            }
+            else if (inst.OpCode.OperandType == OperandType.InlineBrTarget && inst.Operand is int relLong)
+            {
+                inst.AbsoluteTarget = inst.NextInstructionOffset + relLong;
+            }
+        }
+    }
+
+    private static object? ReadOperand(byte[] il, ref int pos, OperandType type, Module module)
     {
         switch (type)
         {

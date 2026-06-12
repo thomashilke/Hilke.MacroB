@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/samples/">
+    <Project Path="samples/DumpIl/DumpIl.csproj" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/IlMacroB.FrontEnd/IlMacroB.FrontEnd.csproj" />
   </Folder>
