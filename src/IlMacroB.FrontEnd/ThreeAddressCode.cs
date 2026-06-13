@@ -4,18 +4,20 @@ namespace Rollomatic.IlMacroB.FrontEnd;
 
 public class TacInstructionBlock
 {
-    public TacInstructionBlock(BasicBlock basicBlock, IEnumerable<TacInstruction> instructions, List<string> incomingStack, List<string> outgoingStack)
+    public TacInstructionBlock(BasicBlock basicBlock, IEnumerable<TacInstruction> instructions, TacInstruction? branchInstruction, List<string> incomingStack, List<string> outgoingStack)
     {
         BasicBlock = basicBlock ?? throw new ArgumentNullException(nameof(basicBlock));
 
         Instructions = instructions ?? throw new ArgumentNullException(nameof(instructions));
+        BranchInstruction = branchInstruction;
+
         IncomingStack = incomingStack ?? throw new ArgumentNullException(nameof(incomingStack));
         OutgoingStack = outgoingStack ?? throw new ArgumentNullException(nameof(outgoingStack));
     }
 
     public BasicBlock BasicBlock { get; }
     public IEnumerable<TacInstruction> Instructions { get; }
-
+    public TacInstruction? BranchInstruction { get; }
     public List<string> IncomingStack { get; }
 
     public List<string> OutgoingStack { get; }
@@ -27,6 +29,8 @@ public class TacInstruction
     public string Op { get; set; }
     public string Arg1 { get; set; }
     public string Arg2 { get; set; }
+
+    public bool IsBranch { get; set; }
 
     public override string ToString() =>
         !string.IsNullOrEmpty(Destination)
@@ -86,7 +90,14 @@ public static class TacConverter
             var incomingStack = context[block].IncomingStack;
             var tacInstructions =  ConvertBlockToTac(block, incomingStack, out var outgoingStack);
 
-            return new TacInstructionBlock(block, tacInstructions, incomingStack, outgoingStack);
+            if (tacInstructions.Last().IsBranch)
+            {
+                return new TacInstructionBlock(block, tacInstructions.SkipLast(1), tacInstructions.Last(), incomingStack, outgoingStack);
+            }
+            else
+            {
+                return new TacInstructionBlock(block, tacInstructions, null, incomingStack, outgoingStack);
+            }
         });
 
         return tacBlocks;
@@ -114,6 +125,28 @@ public static class TacConverter
         var tempCounter = 0;
 
         foreach (var instruction in block.Instructions)
+        {
+            HandleInstruction(instruction);
+        }
+
+        outgoingStack = new();
+        var remainingStackItems = evaluationStack.ToList();
+
+        for (var i = remainingStackItems.Count - 1; i >= 0; i--)
+        {
+            var slotName = $"stack_slot_{i}";
+            tacInstructions.Add(new() { Destination = slotName, Op = "assign", Arg1 = remainingStackItems[i] });
+            outgoingStack.Insert(0, slotName);
+        }
+
+        if (block.BranchInstruction is not null)
+        {
+            HandleInstruction(block.BranchInstruction);
+        }
+
+        return tacInstructions;
+
+        void HandleInstruction(IlInstruction instruction)
         {
             var opName = instruction.OpCode.Name;
 
@@ -158,18 +191,18 @@ public static class TacConverter
                 if (opName.StartsWith("brtrue") || opName.StartsWith("brfalse"))
                 {
                     var condition = evaluationStack.Pop();
-                    tacInstructions.Add(new() { Op = "goto_if_" + opName, Arg1 = condition, Arg2 = $"Block_at_{instruction.AbsoluteTarget.Value}" });
+                    tacInstructions.Add(new() { Op = "goto_if_" + opName, Arg1 = condition, Arg2 = $"Block_at_{instruction.AbsoluteTarget.Value}", IsBranch = true });
                 }
                 else if (opName.StartsWith("ble") || opName.StartsWith("bgt") || opName.StartsWith("bge") || opName.StartsWith("blt") || opName.StartsWith("beq") || opName.StartsWith("bne"))
                 {
                     var left = evaluationStack.Pop();
                     var right = evaluationStack.Pop();
 
-                    tacInstructions.Add(new (){ Destination = $"Block_at_{instruction.AbsoluteTarget.Value}", Op = opName, Arg1 = left, Arg2 = right});
+                    tacInstructions.Add(new() { Destination = $"Block_at_{instruction.AbsoluteTarget.Value}", Op = opName, Arg1 = left, Arg2 = right, IsBranch = true });
                 }
                 else if (opName.StartsWith("br"))
                 { // unconditional jump
-                    tacInstructions.Add(new() { Op = "goto", Arg1 = $"Block_at_{instruction.AbsoluteTarget.Value}" });
+                    tacInstructions.Add(new() { Op = "goto", Arg1 = $"Block_at_{instruction.AbsoluteTarget.Value}", IsBranch = true });
                 }
                 else
                 {
@@ -218,17 +251,5 @@ public static class TacConverter
                 throw new NotSupportedException($"Unsupported instruction {opName}");
             }
         }
-
-        outgoingStack = new();
-        var remainingStackItems = evaluationStack.ToList();
-
-        for (var i = remainingStackItems.Count - 1; i >= 0; i--)
-        {
-            var slotName = $"stack_slot_{i}";
-            tacInstructions.Add(new() { Destination = slotName, Op = "assign", Arg1 = remainingStackItems[i] });
-            outgoingStack.Insert(0, slotName);
-        }
-
-        return tacInstructions;
     }
 }

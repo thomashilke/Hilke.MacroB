@@ -27,29 +27,28 @@ public static class ControlFlowGraphBuilder
         }
 
         // Segment the instruction sequence into blocks
-        var blocks = new List<BasicBlock>();
-        BasicBlock? initialBlock = null;
-        BasicBlock? currentBlock = null;
+        var blockBuilders = new List<BasicBlockBuilder>();
+        BasicBlockBuilder? currentBlock = null;
         var blockCounter = 0;
 
         foreach (var instruction in instructions)
         {
             if (leaders.Contains(instruction.Offset) || currentBlock is null)
             {
-                var newBlock = new BasicBlock(id: blockCounter++);
-                initialBlock = initialBlock is null ? newBlock : initialBlock;
-                currentBlock = newBlock;
-                blocks.Add(currentBlock);
+                currentBlock = new BasicBlockBuilder(blockId: blockCounter++, isInitial: currentBlock is null);
+                blockBuilders.Add(currentBlock);
             }
 
-            currentBlock.Instructions.Add(instruction);
+            currentBlock.AddInstruction(instruction);
         }
+
+        var blocks = blockBuilders.Select(blockBuilder => blockBuilder.Build()).ToList();
 
         // Link the blocks
         var blockMap = blocks.ToDictionary(block => block.Instructions.First().Offset);
         foreach (var block in blocks)
         {
-            var lastInstruction = block.Instructions.Last();
+            var lastInstruction = block.BranchInstruction ?? block.Instructions.Last();
 
             if (lastInstruction.AbsoluteTarget.HasValue)
             {
@@ -78,6 +77,6 @@ public static class ControlFlowGraphBuilder
             }
         }
 
-        return new ControlFlowGraph(blocks, initialBlock);
+        return new ControlFlowGraph(blocks, blocks.Single(block => block.IsInitial));
     }
 }
