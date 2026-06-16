@@ -18,6 +18,7 @@ public static class GraphExtensions
             {
                 return;
             }
+
             visited.Add(vertex);
 
             foreach (var successor in graph.GetSuccessors(vertex))

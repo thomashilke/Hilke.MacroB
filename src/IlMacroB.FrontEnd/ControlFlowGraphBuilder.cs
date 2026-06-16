@@ -1,3 +1,5 @@
+using System.Reflection.Emit;
+
 namespace Rollomatic.IlMacroB.FrontEnd;
 
 public static class ControlFlowGraphBuilder
@@ -19,8 +21,8 @@ public static class ControlFlowGraphBuilder
                 leaders.Add(instruction.AbsoluteTarget.Value);
                 leaders.Add(instruction.NextInstructionOffset);
             }
-            else if (instruction.OpCode.FlowControl == System.Reflection.Emit.FlowControl.Return ||
-                     instruction.OpCode.FlowControl == System.Reflection.Emit.FlowControl.Throw)
+            else if (instruction.OpCode.FlowControl == FlowControl.Return
+                  || instruction.OpCode.FlowControl == FlowControl.Throw)
             {
                 leaders.Add(instruction.NextInstructionOffset);
             }
@@ -58,9 +60,9 @@ public static class ControlFlowGraphBuilder
                 }
             }
 
-            if (lastInstruction.OpCode.FlowControl != System.Reflection.Emit.FlowControl.Branch &&
-                lastInstruction.OpCode.FlowControl != System.Reflection.Emit.FlowControl.Return &&
-                lastInstruction.OpCode.FlowControl != System.Reflection.Emit.FlowControl.Throw)
+            if (lastInstruction.OpCode.FlowControl != FlowControl.Branch
+             && lastInstruction.OpCode.FlowControl != FlowControl.Return
+             && lastInstruction.OpCode.FlowControl != FlowControl.Throw)
             {
                 if (blockMap.TryGetValue(lastInstruction.NextInstructionOffset, out var nextBlock))
                 {

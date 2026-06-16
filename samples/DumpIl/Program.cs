@@ -2,41 +2,65 @@
 
 namespace Rollomatic.IlMacroB.Samples.DumpIl;
 
+public static class CNC
+{
+    public enum Axis
+    {
+        X,
+        Y,
+        Z,
+        A,
+        B,
+        C
+    }
+
+    public static void Move(double feed, params (Axis axis, double position)[] commands)
+    {
+        throw new NotSupportedException("Only supported on the CNC.");
+    }
+}
+
 public class Program
 {
-    public int AddTwoNumbers(int a, int b)
+    public unsafe void IterateSomeArray()
+    {
+        var toto = stackalloc int[4];
+
+        toto[0] = 1;
+        toto[1] = 42;
+        toto[2] = 5;
+        toto[3] = 22;
+
+        var sum = 0;
+        for (var i = 0; i < 4; ++i)
+        {
+            sum += toto[i];
+        }
+    }
+
+    public double AddTwoNumbers(int a, int b)
     {
         if (a > 5)
         {
             a -= 5;
         }
 
-        return a + b;
+        a *= 2;
+
+        //CNC.Move(a, (CNC.Axis.A, 5.0));
+
+        return Math.Sin(a + b);
     }
 
     public static int Main(string[] args)
     {
+        //var method = typeof(Program).GetMethod(nameof(IterateSomeArray));
         var method = typeof(Program).GetMethod(nameof(AddTwoNumbers));
+
         var instructions = IlParser.ParseMethod(method);
-
-        foreach (var instruction in instructions)
-        {
-            Console.WriteLine(instruction);
-        }
-
         var controlFlowGraph = ControlFlowGraphBuilder.BuildControlFlowGraph(instructions);
-
-        foreach (var block in controlFlowGraph.Blocks)
-        {
-            Console.WriteLine($"\n{GetBlockName(block)}");
-            foreach (var instruction in block.Instructions)
-            {
-                Console.WriteLine(instruction);
-            }
-            Console.WriteLine($"Successors: {string.Join(", ", block.Successors.Select(GetBlockName))}");
-        }
-
-        var tacBlocks = TacConverter.DoTheFixedPointIterationToFindStackShapes(controlFlowGraph);
+        var tacBlocks = TacConverter.Convert(controlFlowGraph);
+        SsaRenamer.Rename(tacBlocks);
 
         foreach (var block in tacBlocks)
         {
@@ -46,14 +70,13 @@ public class Program
             {
                 Console.WriteLine(instruction);
             }
-            Console.WriteLine($"Outgoing stack: [{string.Join(", ", block.OutgoingStack)}]");
         }
 
-        return 1;
+        return 0;
     }
 
     private static string GetBlockName(BasicBlock block)
     {
-        return $"Block_{block.Instructions.First().Offset}";
+        return $"Block #{block.Id} at offset {block.Instructions.First().Offset}";
     }
 }

@@ -12,7 +12,6 @@ public class IlInstruction
         Length = length;
     }
 
-
     public int Offset { get; }
 
     public int Length { get; }
@@ -25,5 +24,8 @@ public class IlInstruction
 
     public int NextInstructionOffset => Offset + Length;
 
-    public override string ToString() => $"{Offset:X4}: {OpCode} {Operand}";
+    public override string ToString()
+    {
+        return $"{Offset:X4}: {OpCode} {Operand}";
+    }
 }

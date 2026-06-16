@@ -10,11 +10,11 @@ public static class IlParser
     static IlParser()
     {
         // Cache all standard .NET IL opcodes for O(1) runtime lookup
-        foreach (FieldInfo field in typeof(OpCodes).GetFields(BindingFlags.Public | BindingFlags.Static))
+        foreach (var field in typeof(OpCodes).GetFields(BindingFlags.Public | BindingFlags.Static))
         {
             if (field.FieldType == typeof(OpCode))
             {
-                OpCode op = (OpCode)field.GetValue(null);
+                var op = (OpCode)field.GetValue(null);
                 OpCodeMap[op.Value] = op;
             }
         }
@@ -42,10 +42,9 @@ public static class IlParser
             if (opValue == 0xFE && position < il.Length)
             {
                 opValue = (short)((opValue << 8) | il[position++]);
-
             }
 
-            if (!OpCodeMap.TryGetValue(opValue, out OpCode opCode))
+            if (!OpCodeMap.TryGetValue(opValue, out var opCode))
             {
                 throw new InvalidOperationException($"Unknown opcode: 0x{opValue:X}");
             }
@@ -95,30 +94,36 @@ public static class IlParser
             case OperandType.ShortInlineI:
                 return (int)(sbyte)il[pos++]; // sbyte literal
             case OperandType.ShortInlineVar:
-                return il[pos++];             // Local variable index
+                return il[pos++]; // Local variable index
 
             // 2-byte operands
             case OperandType.InlineVar:
-                short varIndex = BitConverter.ToInt16(il, pos); pos += 2;
+                var varIndex = BitConverter.ToInt16(il, pos);
+                pos += 2;
                 return varIndex;
 
             // 4-byte numeric or control flow targets
             case OperandType.InlineBrTarget:
-                int brTarget = BitConverter.ToInt32(il, pos); pos += 4;
+                var brTarget = BitConverter.ToInt32(il, pos);
+                pos += 4;
                 return brTarget;
             case OperandType.InlineI:
-                int intVal = BitConverter.ToInt32(il, pos); pos += 4;
+                var intVal = BitConverter.ToInt32(il, pos);
+                pos += 4;
                 return intVal;
             case OperandType.ShortInlineR:
-                float floatVal = BitConverter.ToSingle(il, pos); pos += 4;
+                var floatVal = BitConverter.ToSingle(il, pos);
+                pos += 4;
                 return floatVal;
 
             // 8-byte numeric literals
             case OperandType.InlineI8:
-                long longVal = BitConverter.ToInt64(il, pos); pos += 8;
+                var longVal = BitConverter.ToInt64(il, pos);
+                pos += 8;
                 return longVal;
             case OperandType.InlineR:
-                double doubleVal = BitConverter.ToDouble(il, pos); pos += 8;
+                var doubleVal = BitConverter.ToDouble(il, pos);
+                pos += 8;
                 return doubleVal;
 
             // Metadata tokens (Methods, Fields, Types, Strings)
@@ -126,21 +131,26 @@ public static class IlParser
             case OperandType.InlineMethod:
             case OperandType.InlineType:
             case OperandType.InlineTok:
-                int token = BitConverter.ToInt32(il, pos); pos += 4;
+                var token = BitConverter.ToInt32(il, pos);
+                pos += 4;
                 return ResolveToken(module, token);
 
             case OperandType.InlineString:
-                int stringToken = BitConverter.ToInt32(il, pos); pos += 4;
+                var stringToken = BitConverter.ToInt32(il, pos);
+                pos += 4;
                 return module.ResolveString(stringToken);
 
             // Switch table (Varying size)
             case OperandType.InlineSwitch:
-                int count = BitConverter.ToInt32(il, pos); pos += 4;
-                int[] targets = new int[count];
-                for (int i = 0; i < count; i++)
+                var count = BitConverter.ToInt32(il, pos);
+                pos += 4;
+                var targets = new int[count];
+                for (var i = 0; i < count; i++)
                 {
-                    targets[i] = BitConverter.ToInt32(il, pos); pos += 4;
+                    targets[i] = BitConverter.ToInt32(il, pos);
+                    pos += 4;
                 }
+
                 return targets;
 
             default:
