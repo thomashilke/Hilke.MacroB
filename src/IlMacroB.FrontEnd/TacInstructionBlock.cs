@@ -3,8 +3,11 @@ using System.Diagnostics;
 namespace Rollomatic.IlMacroB.FrontEnd;
 
 [DebuggerDisplay("Block_{Id}")]
-public class TacInstructionBlock
+public class TacInstructionBlock : IAdjacencyVertex<TacInstructionBlock>
 {
+    private List<TacInstructionBlock> _successors;
+    private List<TacInstructionBlock> _predecessors;
+
     public TacInstructionBlock(
         BasicBlock basicBlock,
         IEnumerable<TacInstruction> instructions,
@@ -21,8 +24,8 @@ public class TacInstructionBlock
         IncomingStack = incomingStack ?? throw new ArgumentNullException(nameof(incomingStack));
         OutgoingStack = outgoingStack ?? throw new ArgumentNullException(nameof(outgoingStack));
 
-        Successors = new();
-        Predecessors = new();
+        _successors = new();
+        _predecessors = new();
     }
 
     public int Id => BasicBlock.Id;
@@ -49,9 +52,15 @@ public class TacInstructionBlock
 
     public List<string> OutgoingStack { get; }
 
-    public List<TacInstructionBlock> Successors { get; set; }
+    public IReadOnlyList<TacInstructionBlock> Successors
+    {
+        get => _successors;
+    }
 
-    public List<TacInstructionBlock> Predecessors { get; set; }
+    public IReadOnlyList<TacInstructionBlock> Predecessors
+    {
+        get => _predecessors;
+    }
 
     public void RemoveInstruction(TacInstruction usesDefinition)
     {
@@ -60,5 +69,15 @@ public class TacInstructionBlock
         {
             //throw new InvalidOperationException("Cannot remove instruction: not found");
         }
+    }
+
+    public void AddPredecessors(IEnumerable<TacInstructionBlock> predecessors)
+    {
+        _predecessors.AddRange(predecessors);
+    }
+
+    public void AddSuccessors(IEnumerable<TacInstructionBlock> successors)
+    {
+        _successors.AddRange(successors);
     }
 }

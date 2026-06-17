@@ -1,14 +1,16 @@
 namespace Rollomatic.IlMacroB.FrontEnd;
 
-public static class SsaRenamer
+public class StaticSingleAssignmentRenameTransform : IControlFlowGraphTransformation<TacInstructionBlock>
 {
-    public static void Rename(IReadOnlyList<TacInstructionBlock> tacBlocks)
+    public void Transform(ControlFlowGraph<TacInstructionBlock> controlFlowGraph)
     {
-        var entry = tacBlocks.Single(b => b.IsEntry);
+        var entry = controlFlowGraph.EntryBlock;
 
-        var immediateDominator = DominanceEngine.ComputeImmediateDominator(tacBlocks, entry);
-        var dominanceFrontiers = DominanceEngine.ComputeFrontiers(tacBlocks, entry);
-        DominanceEngine.InsertPhiNodes(tacBlocks, dominanceFrontiers);
-        new SsaRecursiveRenamer(entry, immediateDominator);
+        var immediateDominator = DominanceEngine.ComputeImmediateDominator(controlFlowGraph.Blocks, entry);
+        var dominanceFrontiers = DominanceEngine.ComputeFrontiers(controlFlowGraph.Blocks, entry);
+        DominanceEngine.InsertPhiNodes(controlFlowGraph.Blocks, dominanceFrontiers);
+
+        var recursiveRenamer = new SingleStaticAssignmentRecursiveRenamer();
+        recursiveRenamer.Rename(entry, immediateDominator);
     }
 }

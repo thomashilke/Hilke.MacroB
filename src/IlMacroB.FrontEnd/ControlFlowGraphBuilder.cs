@@ -4,7 +4,7 @@ namespace Rollomatic.IlMacroB.FrontEnd;
 
 public static class ControlFlowGraphBuilder
 {
-    public static ControlFlowGraph BuildControlFlowGraph(List<IlInstruction> instructions)
+    public static ControlFlowGraph<BasicBlock> Create(List<IlInstruction> instructions)
     {
         if (!instructions.Any())
         {
@@ -56,7 +56,7 @@ public static class ControlFlowGraphBuilder
             {
                 if (blockMap.TryGetValue(lastInstruction.AbsoluteTarget.Value, out var targetBlock))
                 {
-                    block.Successors.Add(targetBlock);
+                    block.AddSuccessor(targetBlock);
                 }
             }
 
@@ -66,7 +66,7 @@ public static class ControlFlowGraphBuilder
             {
                 if (blockMap.TryGetValue(lastInstruction.NextInstructionOffset, out var nextBlock))
                 {
-                    block.Successors.Add(nextBlock);
+                    block.AddSuccessor(nextBlock);
                 }
             }
         }
@@ -75,10 +75,11 @@ public static class ControlFlowGraphBuilder
         {
             foreach (var successor in block.Successors)
             {
-                successor.Predecessors.Add(block);
+                successor.AddPredecessor(block);
             }
         }
 
-        return new ControlFlowGraph(blocks, blocks.Single(block => block.IsInitial));
+
+        return new ControlFlowGraph<BasicBlock>(blocks, blocks.Single(block => block.IsInitial));
     }
 }

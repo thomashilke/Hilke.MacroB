@@ -1,24 +1,26 @@
 namespace Rollomatic.IlMacroB.FrontEnd;
 
-public class ControlFlowGraph : IGraph<BasicBlock>
+public class ControlFlowGraph<TBlock> : IGraph<TBlock> where TBlock : IAdjacencyVertex<TBlock>
 {
-    public ControlFlowGraph(IReadOnlyList<BasicBlock> blocks, BasicBlock initialBlock)
+    public IReadOnlyList<TBlock> Blocks { get; }
+
+    public TBlock EntryBlock { get; }
+
+    public ControlFlowGraph(IReadOnlyList<TBlock> blocks, TBlock entryBlock)
     {
         Blocks = blocks ?? throw new ArgumentNullException(nameof(blocks));
-        InitialBlock = initialBlock ?? throw new ArgumentNullException(nameof(initialBlock));
+        EntryBlock = entryBlock ?? throw new ArgumentNullException(nameof(entryBlock));
     }
 
-    public IReadOnlyList<BasicBlock> Blocks { get; }
-
-    public BasicBlock InitialBlock { get; }
-
-    IEnumerable<BasicBlock> IGraph<BasicBlock>.GetPredecessors(BasicBlock vertex)
-    {
-        return vertex.Predecessors;
-    }
-
-    IEnumerable<BasicBlock> IGraph<BasicBlock>.GetSuccessors(BasicBlock vertex)
+    /// <inheritdoc />
+    IEnumerable<TBlock> IGraph<TBlock>.GetSuccessors(TBlock vertex)
     {
         return vertex.Successors;
+    }
+
+    /// <inheritdoc />
+    IEnumerable<TBlock> IGraph<TBlock>.GetPredecessors(TBlock vertex)
+    {
+        return vertex.Predecessors;
     }
 }

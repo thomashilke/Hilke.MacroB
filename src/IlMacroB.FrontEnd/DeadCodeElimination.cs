@@ -1,9 +1,12 @@
 namespace Rollomatic.IlMacroB.FrontEnd;
 
-public class DeadCodeElimination
+public class DeadCodeEliminationTransform : IControlFlowGraphTransformation<TacInstructionBlock>
 {
-    public DeadCodeElimination(DominatorTree dominanceTree)
+    /// <inheritdoc />
+    public void Transform(ControlFlowGraph<TacInstructionBlock> controlFlowGraph)
     {
+        var dominanceTree = DominanceEngine.ComputeDominatorTree(controlFlowGraph.Blocks);
+
         while (RunIteration(dominanceTree))
         {
             ;
@@ -41,7 +44,7 @@ public class DeadCodeElimination
                 }
 
                 foreach (var (argument, argumentIndex) in instruction.Arguments.Select((instruction, index) =>
-                                 (instruction, index)))
+                             (instruction, index)))
                 {
                     if (argument is SsaVariable variable)
                     {
@@ -79,7 +82,7 @@ public class DeadCodeElimination
             }
             else
             {
-                if(uses.Definition.Arguments.First() is FunctionCall functionCall)
+                if (uses.Definition.Arguments.First() is FunctionCall functionCall)
                 {
                     if (functionCall.IsPure)
                     {
@@ -89,11 +92,13 @@ public class DeadCodeElimination
                     {
                         uses.Definition.Destination = null;
                     }
+
                     didChange = true;
                 }
                 else
                 {
-                    throw new InvalidOperationException($"The first argument of a function call should be a FunctionCall, but got {uses.Definition.Arguments.First().GetType()}");
+                    throw new InvalidOperationException(
+                        $"The first argument of a function call should be a FunctionCall, but got {uses.Definition.Arguments.First().GetType()}");
                 }
             }
         }

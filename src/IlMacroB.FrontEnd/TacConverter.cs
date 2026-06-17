@@ -5,14 +5,14 @@ namespace Rollomatic.IlMacroB.FrontEnd;
 
 public static class TacConverter
 {
-    public static IReadOnlyList<TacInstructionBlock> Convert(ControlFlowGraph controlFlowGraph)
+    public static ControlFlowGraph<TacInstructionBlock> Convert(ControlFlowGraph<BasicBlock> controlFlowGraph)
     {
         var reversePostOrder = controlFlowGraph
-                               .ReversePostOrder(controlFlowGraph.InitialBlock)
+                               .ReversePostOrder(controlFlowGraph.EntryBlock)
                                .ToList();
 
         var context = reversePostOrder.ToDictionary(block => block, _ => new BlockTranslationContext());
-        context[controlFlowGraph.InitialBlock].IncomingStack = new List<string>(); // empty initial stack
+        context[controlFlowGraph.EntryBlock].IncomingStack = new List<string>(); // empty initial stack
 
         var changed = true;
         while (changed)
@@ -78,11 +78,11 @@ public static class TacConverter
 
         foreach (var tacBlock in tacBlocks)
         {
-            tacBlock.Predecessors = tacBlock.BasicBlock.Predecessors.Select(p => blockMap[p]).ToList();
-            tacBlock.Successors = tacBlock.BasicBlock.Successors.Select(p => blockMap[p]).ToList();
+            tacBlock.AddPredecessors(tacBlock.BasicBlock.Predecessors.Select(p => blockMap[p]).ToList());
+            tacBlock.AddSuccessors(tacBlock.BasicBlock.Successors.Select(p => blockMap[p]).ToList());
         }
 
-        return tacBlocks;
+        return new ControlFlowGraph<TacInstructionBlock>(tacBlocks, blockMap[controlFlowGraph.EntryBlock]);
     }
 
     public static List<TacInstruction> ConvertBlockToTac(

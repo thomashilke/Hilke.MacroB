@@ -1,9 +1,11 @@
 namespace Rollomatic.IlMacroB.FrontEnd;
 
-public static class ConstantPropagator
+public  class ConstantPropagatorTransform : IControlFlowGraphTransformation<TacInstructionBlock>
 {
-    public static void PropagateConstants(DominatorTree dominatorTree)
+    public  void Transform(ControlFlowGraph<TacInstructionBlock> controlFlowGraph)
     {
+        var dominatorTree = DominanceEngine.ComputeDominatorTree(controlFlowGraph);
+
         var didChange = true;
 
         var substitutions = new Dictionary<SsaVariable, SsaVariable>() as IDictionary<SsaVariable, SsaVariable>;

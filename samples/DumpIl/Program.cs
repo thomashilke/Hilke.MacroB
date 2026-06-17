@@ -62,14 +62,21 @@ public class Program
         var method = typeof(Program).GetMethod(nameof(AddTwoNumbers));
 
         var instructions = IlParser.ParseMethod(method);
-        var controlFlowGraph = ControlFlowGraphBuilder.BuildControlFlowGraph(instructions);
-        var tacBlocks = TacConverter.Convert(controlFlowGraph);
-        SsaRenamer.Rename(tacBlocks);
+        var controlFlowGraph = ControlFlowGraphBuilder.Create(instructions);
+        var tacControlFlowGraph = TacConverter.Convert(controlFlowGraph);
 
-        new DeadCodeElimination(DominanceEngine.ComputeDominatorTree(tacBlocks));
-        //ConstantPropagator.PropagateConstants(DominanceEngine.ComputeDominatorTree(tacBlocks));
+        var renameTransform = new StaticSingleAssignmentRenameTransform();
+        renameTransform.Transform(tacControlFlowGraph);
 
-        foreach (var block in tacBlocks)
+        var dceTransform = new DeadCodeEliminationTransform();
+        dceTransform.Transform(tacControlFlowGraph);
+
+        var constantPropagationTransform = new ConstantPropagatorTransform();
+        //constantPropagationTransform.Transform(tacControlFlowGraph);
+
+        var livenessRangeAnalysis = LivenessRangeAnalysis.Analyse(tacControlFlowGraph);
+
+        foreach (var block in tacControlFlowGraph.Blocks)
         {
             Console.WriteLine("\n" + GetBlockName(block));
             Console.WriteLine($"Incoming stack: [{string.Join(", ", block.IncomingStack)}]");
@@ -77,6 +84,12 @@ public class Program
             {
                 Console.WriteLine(instruction);
             }
+        }
+
+        Console.WriteLine("");
+        foreach (var range in livenessRangeAnalysis.GetRanges())
+        {
+            Console.WriteLine($"Range: [{string.Join(", ", range)}]");
         }
 
         return 0;

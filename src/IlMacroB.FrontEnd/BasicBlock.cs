@@ -1,7 +1,10 @@
 namespace Rollomatic.IlMacroB.FrontEnd;
 
-public class BasicBlock
+public class BasicBlock : IAdjacencyVertex<BasicBlock>
 {
+    private readonly List<BasicBlock> _successors = new();
+    private readonly List<BasicBlock> _predecessors = new();
+
     internal BasicBlock(
         int id,
         bool isInitial,
@@ -26,7 +29,17 @@ public class BasicBlock
 
     public IlInstruction? BranchInstruction { get; }
 
-    public List<BasicBlock> Successors { get; } = new();
+    public IReadOnlyList<BasicBlock> Successors => _successors;
 
-    public List<BasicBlock> Predecessors { get; } = new();
+    public IReadOnlyList<BasicBlock> Predecessors => _predecessors;
+
+    public void AddSuccessor(BasicBlock targetBlock)
+    {
+        _successors.Add(targetBlock);
+    }
+
+    public void AddPredecessor(BasicBlock block)
+    {
+        _predecessors.Add(block);
+    }
 }

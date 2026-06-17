@@ -63,7 +63,7 @@ public class DominanceEngine
 
         foreach (var block in blocks)
         {
-            if (block.Predecessors.Count >= 2)
+            if (block.Predecessors.Count() >= 2)
             {
                 foreach (var predecessor in block.Predecessors)
                 {
@@ -78,6 +78,11 @@ public class DominanceEngine
         }
 
         return frontiers.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToList() as IReadOnlyList<TacInstructionBlock>);
+    }
+
+    public static DominatorTree ComputeDominatorTree(ControlFlowGraph<TacInstructionBlock> controlFlowGraph)
+    {
+        return new DominatorTree(ComputeImmediateDominator(controlFlowGraph.Blocks, controlFlowGraph.EntryBlock));
     }
 
     public static DominatorTree ComputeDominatorTree(IReadOnlyList<TacInstructionBlock> blocks)
@@ -133,15 +138,15 @@ public class DominanceEngine
 
             foreach (var block in blocks)
             {
-                var newDominators = block.Predecessors.Count == 0
+                var newDominators = block.Predecessors.Count() == 0
                                         ? new HashSet<TacInstructionBlock> { block }
                                         : block.Predecessors.First() is not null
                                             ? dominatorTree[block.Predecessors.First()].ToHashSet()
                                             : new HashSet<TacInstructionBlock>();
 
-                for (var i = 1; i < block.Predecessors.Count; ++i)
+                for (var i = 1; i < block.Predecessors.Count(); ++i)
                 {
-                    newDominators.IntersectWith(dominatorTree[block.Predecessors[i]]);
+                    newDominators.IntersectWith(dominatorTree[block.Predecessors.ElementAt(i)]);
                 }
 
                 newDominators.Add(block);

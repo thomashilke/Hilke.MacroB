@@ -1,14 +1,33 @@
 namespace Rollomatic.IlMacroB.FrontEnd;
 
-public class SsaRecursiveRenamer
+public static class ReadOnlyListExtensions
 {
-    private readonly Dictionary<string, int> _counter = new();
-    private readonly Dictionary<string, Stack<int>> _stack = new();
+    public static int IndexOf<T>(this IReadOnlyList<T> self, T elementToFind)
+    {
+        int i = 0;
+        foreach (T element in self)
+        {
+            if (Equals(element, elementToFind))
+                return i;
+            i++;
+        }
 
-    public SsaRecursiveRenamer(
+        return -1;
+    }
+}
+
+public class SingleStaticAssignmentRecursiveRenamer
+{
+    private Dictionary<string, int> _counter;
+    private Dictionary<string, Stack<int>> _stack;
+
+    public void Rename(
         TacInstructionBlock entry,
         Dictionary<TacInstructionBlock, TacInstructionBlock> immediateDominator)
     {
+        _counter = new();
+        _stack = new();
+
         var allVariables = entry.Instructions
                                 .Select(instruction => instruction.Destination?.Name)
                                 .Where(name => name is not null)
