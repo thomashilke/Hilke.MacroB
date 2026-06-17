@@ -2,31 +2,57 @@ namespace Rollomatic.IlMacroB.FrontEnd;
 
 public static class GraphExtensions
 {
-    public static IEnumerable<TVertex> ReversePostOrder<TVertex>(this IGraph<TVertex> graph, TVertex root)
+    extension<TVertex>(IGraph<TVertex> graph)
     {
-        var visited = new HashSet<TVertex>();
-        var postorder = new List<TVertex>();
-
-        visit(root);
-
-        postorder.Reverse();
-        return postorder;
-
-        void visit(TVertex vertex)
+        public IEnumerable<TVertex> ReversePostOrder(TVertex root)
         {
-            if (visited.Contains(vertex))
+            var visited = new HashSet<TVertex>();
+            var postorder = new List<TVertex>();
+
+            visit(root);
+
+            postorder.Reverse();
+            return postorder;
+
+            void visit(TVertex vertex)
             {
-                return;
+                if (!visited.Add(vertex))
+                {
+                    return;
+                }
+
+                foreach (var successor in graph.GetSuccessors(vertex))
+                {
+                    visit(successor);
+                }
+
+                postorder.Add(vertex);
             }
+        }
 
-            visited.Add(vertex);
+        public IEnumerable<TVertex> DepthFirstIterator(TVertex root)
+        {
+            var visited = new HashSet<TVertex>();
+            var stack = new Stack<TVertex>();
 
-            foreach (var successor in graph.GetSuccessors(vertex))
+            stack.Push(root);
+
+            while (stack.Count > 0)
             {
-                visit(successor);
-            }
+                var current = stack.Pop();
 
-            postorder.Add(vertex);
+                if (!visited.Add(current))
+                {
+                    continue;
+                }
+
+                yield return current;
+
+                foreach (var successor in graph.GetSuccessors(current))
+                {
+                    stack.Push(successor);
+                }
+            }
         }
     }
 }

@@ -80,6 +80,11 @@ public class DominanceEngine
         return frontiers.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToList() as IReadOnlyList<TacInstructionBlock>);
     }
 
+    public static DominatorTree ComputeDominatorTree(IReadOnlyList<TacInstructionBlock> blocks)
+    {
+        return new DominatorTree(ComputeImmediateDominator(blocks, blocks.Single(block => block.IsEntry)));
+    }
+
     public static Dictionary<TacInstructionBlock, TacInstructionBlock> ComputeImmediateDominator(
         IReadOnlyList<TacInstructionBlock> blocks,
         TacInstructionBlock entry)

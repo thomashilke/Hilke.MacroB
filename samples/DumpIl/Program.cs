@@ -18,6 +18,8 @@ public static class CNC
     {
         throw new NotSupportedException("Only supported on the CNC.");
     }
+
+    public static int StartCoolant() => throw new NotSupportedException("Only supported on the CNC.");
 }
 
 public class Program
@@ -47,6 +49,8 @@ public class Program
 
         a *= 2;
 
+        CNC.StartCoolant();
+
         //CNC.Move(a, (CNC.Axis.A, 5.0));
 
         return Math.Sin(a + b);
@@ -62,9 +66,12 @@ public class Program
         var tacBlocks = TacConverter.Convert(controlFlowGraph);
         SsaRenamer.Rename(tacBlocks);
 
+        new DeadCodeElimination(DominanceEngine.ComputeDominatorTree(tacBlocks));
+        //ConstantPropagator.PropagateConstants(DominanceEngine.ComputeDominatorTree(tacBlocks));
+
         foreach (var block in tacBlocks)
         {
-            Console.WriteLine("\n" + GetBlockName(block.BasicBlock));
+            Console.WriteLine("\n" + GetBlockName(block));
             Console.WriteLine($"Incoming stack: [{string.Join(", ", block.IncomingStack)}]");
             foreach (var instruction in block.Instructions)
             {
@@ -75,8 +82,8 @@ public class Program
         return 0;
     }
 
-    private static string GetBlockName(BasicBlock block)
+    private static string GetBlockName(TacInstructionBlock block)
     {
-        return $"Block #{block.Id} at offset {block.Instructions.First().Offset}";
+        return $"Block #{block.Id} at offset {block.EntryOffset}";
     }
 }

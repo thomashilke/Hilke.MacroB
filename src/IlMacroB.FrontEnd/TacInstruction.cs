@@ -15,11 +15,11 @@ public class TacInstruction
         Arguments = arguments.ToList();
     }
 
-    public SsaVariable? Destination { get; }
+    public SsaVariable? Destination { get; set; }
 
     public Operand Op { get; }
 
-    public List<object> Arguments { get; }
+    public List<object> Arguments { get; set; }
 
     public bool IsBranch => Op.IsControlFlow();
 
