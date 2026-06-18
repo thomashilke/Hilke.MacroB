@@ -79,7 +79,6 @@ public static class ControlFlowGraphBuilder
             }
         }
 
-
         return new ControlFlowGraph<BasicBlock>(blocks, blocks.Single(block => block.IsInitial));
     }
 }

@@ -3,6 +3,7 @@ namespace Rollomatic.IlMacroB.FrontEnd;
 public enum Operand
 {
     Assign,
+    Sin,
     Add,
     Sub,
     Mul,

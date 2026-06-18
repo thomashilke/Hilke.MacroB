@@ -32,8 +32,10 @@ public class LivenessRangeAnalysis
         return new LivenessRangeAnalysis(ranges);
     }
 
-    public IEnumerable<IEnumerable<SsaVariable>> GetRanges()
+    public IEnumerable<(SsaVariable Representent, IEnumerable<SsaVariable> Set)> GetRanges()
     {
-        return Ranges.GetElements().GroupBy(element => Ranges.Find(element));
+        return Ranges.GetElements()
+                     .GroupBy(element => Ranges.Find(element))
+                     .Select(g => (g.Key, g as IEnumerable<SsaVariable>));
     }
 }

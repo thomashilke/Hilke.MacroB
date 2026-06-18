@@ -1,4 +1,17 @@
+using System.Diagnostics;
+
 namespace Rollomatic.IlMacroB.FrontEnd;
+
+[DebuggerDisplay("Block_at_{Target}")]
+public class JumpTarget
+{
+    public JumpTarget(int target)
+    {
+        Target = target;
+    }
+
+    public int Target { get; }
+}
 
 public class SsaVariable : IEquatable<SsaVariable>
 {

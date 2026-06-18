@@ -17,7 +17,7 @@ public class DeadCodeEliminationTransform : IControlFlowGraphTransformation<TacI
     {
         var didChange = false;
 
-        var references = new Dictionary<SsaVariable, DefinitionUses>();
+        var references = new Dictionary<SsaVariable, VariableDefinitionUses>();
         var substitutions = new Dictionary<SsaVariable, SsaVariable>();
 
         foreach (var block in dominanceTree.DepthFirstIterator(dominanceTree.Root))
@@ -34,7 +34,7 @@ public class DeadCodeEliminationTransform : IControlFlowGraphTransformation<TacI
                     }
                     else
                     {
-                        references.Add(destination, new DefinitionUses(instruction, block));
+                        references.Add(destination, new VariableDefinitionUses(instruction, block));
                     }
 
                     if (instruction.Op == Operand.Assign && instruction.Arguments[0] is SsaVariable source)
@@ -51,7 +51,7 @@ public class DeadCodeEliminationTransform : IControlFlowGraphTransformation<TacI
                         if (!references.ContainsKey(variable))
                         {
                             // typically for variable that are not defined, such as method arguments, locals, etc.
-                            references[variable] = new DefinitionUses();
+                            references[variable] = new VariableDefinitionUses();
                         }
 
                         references[variable].AddUse(argumentIndex, instruction);
@@ -104,29 +104,5 @@ public class DeadCodeEliminationTransform : IControlFlowGraphTransformation<TacI
         }
 
         return didChange;
-    }
-
-    public sealed class DefinitionUses
-    {
-        private readonly List<(int, TacInstruction)> _uses = new();
-
-        public DefinitionUses(TacInstruction definition, TacInstructionBlock block)
-        {
-            Definition = definition;
-            Block = block;
-        }
-
-        public DefinitionUses() { }
-
-        public TacInstruction? Definition { get; set; }
-
-        public TacInstructionBlock? Block { get; set; }
-
-        public IReadOnlyList<(int ArgumentIndex, TacInstruction Instruction)> Uses => _uses;
-
-        public void AddUse(int argumentIndex, TacInstruction instruction)
-        {
-            _uses.Add((argumentIndex, instruction));
-        }
     }
 }

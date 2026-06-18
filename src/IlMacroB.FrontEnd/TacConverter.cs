@@ -68,7 +68,7 @@ public static class TacConverter
                                                 tacInstructions,
                                                 new TacInstruction(
                                                     Operand.Br,
-                                                    $"Block_at_{block.Instructions.Last().NextInstructionOffset}"),
+                                                    new JumpTarget(block.Instructions.Last().NextInstructionOffset)),
                                                 incomingStack,
                                                 outgoingStack);
                                         })
@@ -136,21 +136,66 @@ public static class TacConverter
             }
             else if (opName.StartsWith("ldc"))
             {
-                if (instruction.OpCode == OpCodes.Ldc_I4) { evaluationStack.Push(new Constant(instruction.Operand.ToString())); }
-                else if (instruction.OpCode == OpCodes.Ldc_I8) { evaluationStack.Push(new Constant(instruction.Operand.ToString())); }
-                else if (instruction.OpCode == OpCodes.Ldc_I4_0) { evaluationStack.Push(new Constant("0")); }
-                else if (instruction.OpCode == OpCodes.Ldc_I4_1) { evaluationStack.Push(new Constant("1")); }
-                else if (instruction.OpCode == OpCodes.Ldc_I4_2) { evaluationStack.Push(new Constant("2")); }
-                else if (instruction.OpCode == OpCodes.Ldc_I4_3) { evaluationStack.Push(new Constant("3")); }
-                else if (instruction.OpCode == OpCodes.Ldc_I4_4) { evaluationStack.Push(new Constant("4")); }
-                else if (instruction.OpCode == OpCodes.Ldc_I4_5) { evaluationStack.Push(new Constant("5")); }
-                else if (instruction.OpCode == OpCodes.Ldc_I4_6) { evaluationStack.Push(new Constant("6")); }
-                else if (instruction.OpCode == OpCodes.Ldc_I4_7) { evaluationStack.Push(new Constant("7")); }
-                else if (instruction.OpCode == OpCodes.Ldc_I4_8) { evaluationStack.Push(new Constant("8")); }
-                else if (instruction.OpCode == OpCodes.Ldc_I4_M1) { evaluationStack.Push(new Constant("-1")); }
-                else if (instruction.OpCode == OpCodes.Ldc_I4_S) { evaluationStack.Push(new Constant(instruction.Operand.ToString())); }
-                else if (instruction.OpCode == OpCodes.Ldc_R4) { evaluationStack.Push(new Constant(instruction.Operand.ToString())); }
-                else if (instruction.OpCode == OpCodes.Ldc_R8) { evaluationStack.Push(new Constant(instruction.Operand.ToString())); }
+                if (instruction.OpCode == OpCodes.Ldc_I4)
+                {
+                    evaluationStack.Push(new Constant(instruction.Operand.ToString()));
+                }
+                else if (instruction.OpCode == OpCodes.Ldc_I8)
+                {
+                    evaluationStack.Push(new Constant(instruction.Operand.ToString()));
+                }
+                else if (instruction.OpCode == OpCodes.Ldc_I4_0)
+                {
+                    evaluationStack.Push(new Constant("0"));
+                }
+                else if (instruction.OpCode == OpCodes.Ldc_I4_1)
+                {
+                    evaluationStack.Push(new Constant("1"));
+                }
+                else if (instruction.OpCode == OpCodes.Ldc_I4_2)
+                {
+                    evaluationStack.Push(new Constant("2"));
+                }
+                else if (instruction.OpCode == OpCodes.Ldc_I4_3)
+                {
+                    evaluationStack.Push(new Constant("3"));
+                }
+                else if (instruction.OpCode == OpCodes.Ldc_I4_4)
+                {
+                    evaluationStack.Push(new Constant("4"));
+                }
+                else if (instruction.OpCode == OpCodes.Ldc_I4_5)
+                {
+                    evaluationStack.Push(new Constant("5"));
+                }
+                else if (instruction.OpCode == OpCodes.Ldc_I4_6)
+                {
+                    evaluationStack.Push(new Constant("6"));
+                }
+                else if (instruction.OpCode == OpCodes.Ldc_I4_7)
+                {
+                    evaluationStack.Push(new Constant("7"));
+                }
+                else if (instruction.OpCode == OpCodes.Ldc_I4_8)
+                {
+                    evaluationStack.Push(new Constant("8"));
+                }
+                else if (instruction.OpCode == OpCodes.Ldc_I4_M1)
+                {
+                    evaluationStack.Push(new Constant("-1"));
+                }
+                else if (instruction.OpCode == OpCodes.Ldc_I4_S)
+                {
+                    evaluationStack.Push(new Constant(instruction.Operand.ToString()));
+                }
+                else if (instruction.OpCode == OpCodes.Ldc_R4)
+                {
+                    evaluationStack.Push(new Constant(instruction.Operand.ToString()));
+                }
+                else if (instruction.OpCode == OpCodes.Ldc_R8)
+                {
+                    evaluationStack.Push(new Constant(instruction.Operand.ToString()));
+                }
             }
             else if (opName.StartsWith("stloc"))
             {
@@ -182,8 +227,8 @@ public static class TacConverter
                         new TacInstruction(
                             Enum.Parse<Operand>(opName.Substring(0, opName.IndexOf('.')), true),
                             condition,
-                            $"Block_at_{instruction.AbsoluteTarget.Value}",
-                            $"Block_at_{instruction.NextInstructionOffset}"));
+                            new JumpTarget(instruction.AbsoluteTarget.Value),
+                            new JumpTarget(instruction.NextInstructionOffset)));
                 }
                 else if (opName.StartsWith("ble")
                       || opName.StartsWith("bgt")
@@ -202,13 +247,14 @@ public static class TacConverter
                             Enum.Parse<Operand>(name, true),
                             left,
                             right,
-                            $"Block_at_{instruction.AbsoluteTarget.Value}",
-                            $"Block_at_{instruction.NextInstructionOffset}"));
+                            new JumpTarget(instruction.AbsoluteTarget.Value),
+                            new JumpTarget(instruction.NextInstructionOffset)));
                 }
                 else if (opName.StartsWith("br"))
                 {
                     // unconditional jump
-                    tacInstructions.Add(new TacInstruction(Operand.Br, $"Block_at_{instruction.AbsoluteTarget.Value}"));
+                    tacInstructions.Add(
+                        new TacInstruction(Operand.Br, new JumpTarget(instruction.AbsoluteTarget.Value)));
                 }
                 else
                 {
@@ -239,11 +285,18 @@ public static class TacConverter
                 {
                     var tempRegister = $"t{tempCounter++}";
 
-                    tacInstructions.Add(
-                        new TacInstruction(
-                            tempRegister,
-                            Operand.Call,
-                            arguments.Prepend(new FunctionCall(callTarget, false)).ToArray()));
+                    if (callTarget == "Sin")
+                    {
+                        tacInstructions.Add(new TacInstruction(tempRegister, Operand.Sin, arguments.ToArray()));
+                    }
+                    else
+                    {
+                        tacInstructions.Add(
+                            new TacInstruction(
+                                tempRegister,
+                                Operand.Call,
+                                arguments.Prepend(new FunctionCall(callTarget, false)).ToArray()));
+                    }
 
                     evaluationStack.Push(new SsaVariable(tempRegister));
                 }

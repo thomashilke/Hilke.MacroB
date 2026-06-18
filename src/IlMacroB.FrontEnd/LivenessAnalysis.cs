@@ -1,5 +1,48 @@
 namespace Rollomatic.IlMacroB.FrontEnd;
 
+public class LivenessRangeInterferenceAnalysis
+{
+    private LivenessRangeInterferenceAnalysis(UndirectedGraph<SsaVariable> livenessRangeInterferencesGraph)
+    {
+        LivenessRangeInterferencesGraph = livenessRangeInterferencesGraph
+                                       ?? throw new ArgumentNullException(nameof(livenessRangeInterferencesGraph));
+    }
+
+    public UndirectedGraph<SsaVariable> LivenessRangeInterferencesGraph { get; }
+
+    public static LivenessRangeInterferenceAnalysis Analyse(ControlFlowGraph<TacInstructionBlock> controlFlowGraph)
+    {
+        var livenessAnalysis = LivenessAnalysis.Analyse(controlFlowGraph);
+        var livenessRangeAnalysis = LivenessRangeAnalysis.Analyse(controlFlowGraph);
+
+        var ranges = livenessRangeAnalysis.Ranges;
+        var livenessRangeInterferencesGraph = new UndirectedGraph<SsaVariable>(ranges.GetRepresentants());
+
+        foreach (var block in controlFlowGraph.Blocks)
+        {
+            var liveNow = livenessAnalysis.LiveOut[block].ToHashSet();
+            foreach (var instruction in block.Instructions.Reverse())
+            {
+                if (instruction.Destination is not null
+                 && instruction.Op != Operand.Assign
+                 && instruction.Op != Operand.Phi)
+                {
+                    var destRange = ranges.Find(instruction.Destination);
+                    foreach (var liveRange in liveNow.Select(ranges.Find).Distinct())
+                    {
+                        livenessRangeInterferencesGraph.AddEdge(destRange, liveRange);
+                    }
+
+                    liveNow.Remove(instruction.Destination);
+                    liveNow.UnionWith(instruction.Arguments.OfType<SsaVariable>());
+                }
+            }
+        }
+
+        return new LivenessRangeInterferenceAnalysis(livenessRangeInterferencesGraph);
+    }
+}
+
 public class LivenessAnalysis
 {
     public LivenessAnalysis(

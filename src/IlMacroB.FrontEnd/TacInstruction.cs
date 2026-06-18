@@ -60,9 +60,16 @@ public class TacInstruction
 
             case Operand.Phi:
                 return $"{Destination} = Phi({string.Join(", ", Arguments)})";
-
-            default:
+            case Operand.Sin:
+                return $"{Destination} = {Arguments[0]} {Op}";
+            case Operand.Add:
+            case Operand.Sub:
+            case Operand.Mul:
+            case Operand.Div:
+            case Operand.Cgt:
                 return $"{Destination} = {Arguments[0]} {Op} {Arguments[1]}";
+            default:
+                throw new NotSupportedException();
         }
     }
 }

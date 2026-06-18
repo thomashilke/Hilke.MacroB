@@ -1,8 +1,8 @@
 namespace Rollomatic.IlMacroB.FrontEnd;
 
-public  class ConstantPropagatorTransform : IControlFlowGraphTransformation<TacInstructionBlock>
+public class ConstantPropagatorTransform : IControlFlowGraphTransformation<TacInstructionBlock>
 {
-    public  void Transform(ControlFlowGraph<TacInstructionBlock> controlFlowGraph)
+    public void Transform(ControlFlowGraph<TacInstructionBlock> controlFlowGraph)
     {
         var dominatorTree = DominanceEngine.ComputeDominatorTree(controlFlowGraph);
 

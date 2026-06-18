@@ -35,14 +35,25 @@ public class DominatorTree : IGraph<TacInstructionBlock>
     public TacInstructionBlock Root { get; }
 
     /// <inheritdoc />
+    public IEnumerable<(TacInstructionBlock, TacInstructionBlock)> Edges =>
+        _immediateDominator.Select(kvp => (kvp.Value, kvp.Key));
+
+    /// <inheritdoc />
+    IEnumerable<TacInstructionBlock> IGraph<TacInstructionBlock>.Vertices => _immediateDominator.Keys;
+
+    /// <inheritdoc />
     IEnumerable<TacInstructionBlock> IGraph<TacInstructionBlock>.GetSuccessors(TacInstructionBlock vertex)
     {
-        return _dominatorTree.TryGetValue(vertex, out var children) ? children : Enumerable.Empty<TacInstructionBlock>();
+        return _dominatorTree.TryGetValue(vertex, out var children)
+                   ? children
+                   : Enumerable.Empty<TacInstructionBlock>();
     }
 
     /// <inheritdoc />
     IEnumerable<TacInstructionBlock> IGraph<TacInstructionBlock>.GetPredecessors(TacInstructionBlock vertex)
     {
-        return _immediateDominator.TryGetValue(vertex, out var dominator) ? new[] { dominator } : Enumerable.Empty<TacInstructionBlock>();
+        return _immediateDominator.TryGetValue(vertex, out var dominator)
+                   ? new[] { dominator }
+                   : Enumerable.Empty<TacInstructionBlock>();
     }
 }

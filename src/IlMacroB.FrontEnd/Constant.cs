@@ -12,21 +12,27 @@ public sealed class Constant
 
     public string Value { get; }
 
-    public override string ToString() => $"Const({Value})";
+    public override string ToString()
+    {
+        return $"Const({Value})";
+    }
 }
 
 [DebuggerDisplay("Call({FunctionName})")]
 public sealed class FunctionCall
 {
-    public string FunctionName { get; }
-
-    public bool IsPure { get; }
-
     public FunctionCall(string functionName, bool isPure)
     {
         FunctionName = functionName;
         IsPure = isPure;
     }
 
-    public override string ToString() => FunctionName;
+    public string FunctionName { get; }
+
+    public bool IsPure { get; }
+
+    public override string ToString()
+    {
+        return FunctionName;
+    }
 }

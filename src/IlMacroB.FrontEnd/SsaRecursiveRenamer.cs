@@ -4,11 +4,14 @@ public static class ReadOnlyListExtensions
 {
     public static int IndexOf<T>(this IReadOnlyList<T> self, T elementToFind)
     {
-        int i = 0;
-        foreach (T element in self)
+        var i = 0;
+        foreach (var element in self)
         {
             if (Equals(element, elementToFind))
+            {
                 return i;
+            }
+
             i++;
         }
 
@@ -25,8 +28,8 @@ public class SingleStaticAssignmentRecursiveRenamer
         TacInstructionBlock entry,
         Dictionary<TacInstructionBlock, TacInstructionBlock> immediateDominator)
     {
-        _counter = new();
-        _stack = new();
+        _counter = new Dictionary<string, int>();
+        _stack = new Dictionary<string, Stack<int>>();
 
         var allVariables = entry.Instructions
                                 .Select(instruction => instruction.Destination?.Name)

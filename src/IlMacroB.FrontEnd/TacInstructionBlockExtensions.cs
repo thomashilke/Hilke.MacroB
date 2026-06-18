@@ -13,6 +13,5 @@ public static class TacInstructionBlockExtensions
         {
             return block.Instructions.SelectMany(instruction => instruction.Arguments.OfType<SsaVariable>()).Distinct();
         }
-
     }
 }

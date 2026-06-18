@@ -1,9 +1,11 @@
-using System.Collections;
-
 namespace Rollomatic.IlMacroB.FrontEnd;
 
 public interface IGraph<TVertex>
 {
+    IEnumerable<TVertex> Vertices { get; }
+
+    IEnumerable<(TVertex, TVertex)> Edges { get; }
+
     IEnumerable<TVertex> GetSuccessors(TVertex vertex);
 
     IEnumerable<TVertex> GetPredecessors(TVertex vertex);

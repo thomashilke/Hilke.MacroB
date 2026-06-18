@@ -5,8 +5,8 @@ namespace Rollomatic.IlMacroB.FrontEnd;
 [DebuggerDisplay("Block_{Id}")]
 public class TacInstructionBlock : IAdjacencyVertex<TacInstructionBlock>
 {
-    private List<TacInstructionBlock> _successors;
-    private List<TacInstructionBlock> _predecessors;
+    private readonly List<TacInstructionBlock> _successors;
+    private readonly List<TacInstructionBlock> _predecessors;
 
     public TacInstructionBlock(
         BasicBlock basicBlock,
@@ -24,8 +24,8 @@ public class TacInstructionBlock : IAdjacencyVertex<TacInstructionBlock>
         IncomingStack = incomingStack ?? throw new ArgumentNullException(nameof(incomingStack));
         OutgoingStack = outgoingStack ?? throw new ArgumentNullException(nameof(outgoingStack));
 
-        _successors = new();
-        _predecessors = new();
+        _successors = new List<TacInstructionBlock>();
+        _predecessors = new List<TacInstructionBlock>();
     }
 
     public int Id => BasicBlock.Id;
@@ -52,20 +52,13 @@ public class TacInstructionBlock : IAdjacencyVertex<TacInstructionBlock>
 
     public List<string> OutgoingStack { get; }
 
-    public IReadOnlyList<TacInstructionBlock> Successors
-    {
-        get => _successors;
-    }
+    public IReadOnlyList<TacInstructionBlock> Successors => _successors;
 
-    public IReadOnlyList<TacInstructionBlock> Predecessors
-    {
-        get => _predecessors;
-    }
+    public IReadOnlyList<TacInstructionBlock> Predecessors => _predecessors;
 
     public void RemoveInstruction(TacInstruction usesDefinition)
     {
-        if (!((List<TacInstruction>)BodyInstructions).Remove(usesDefinition) &&
-            !Phis.Remove(usesDefinition))
+        if (!((List<TacInstruction>)BodyInstructions).Remove(usesDefinition) && !Phis.Remove(usesDefinition))
         {
             //throw new InvalidOperationException("Cannot remove instruction: not found");
         }
@@ -81,3 +74,5 @@ public class TacInstructionBlock : IAdjacencyVertex<TacInstructionBlock>
         _successors.AddRange(successors);
     }
 }
+
+// Or MacroBCodeGenerator?
