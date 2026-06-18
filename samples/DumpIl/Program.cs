@@ -74,6 +74,8 @@ public class Program
         var constantPropagationTransform = new ConstantPropagatorTransform();
         //constantPropagationTransform.Transform(tacControlFlowGraph);
 
+        var livenessAnalysis = LivenessAnalysis.Analyse(tacControlFlowGraph);
+
         var livenessRangeAnalysis = LivenessRangeAnalysis.Analyse(tacControlFlowGraph);
 
         foreach (var block in tacControlFlowGraph.Blocks)
@@ -84,6 +86,12 @@ public class Program
             {
                 Console.WriteLine(instruction);
             }
+
+            Console.WriteLine($"UeVar: [{string.Join(", ", livenessAnalysis.UeVar[block])}]");
+            Console.WriteLine($"VarNotKilled: [{string.Join(", ", livenessAnalysis.VarNotKilled[block])}]");
+
+            Console.WriteLine($"LiveIn: [{string.Join(", ", livenessAnalysis.LiveIn[block])}]");
+            Console.WriteLine($"LiveOut: [{string.Join(", ", livenessAnalysis.LiveOut[block])}]");
         }
 
         Console.WriteLine("");
