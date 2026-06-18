@@ -2,24 +2,62 @@
 
 namespace Rollomatic.IlMacroB.Samples.DumpIl;
 
-public static class CNC
+public static class Cnc
 {
-    public enum Axis
+    private static void ThrowSupportedOnlyOnCnc() =>
+        throw new NotSupportedException("Only supported on the Cnc.");
+
+    public static void RaiseAlarm(int alarm, string message) => ThrowSupportedOnlyOnCnc();
+
+    public static void Stop(string message) => ThrowSupportedOnlyOnCnc();
+
+    public static class Machine
     {
-        X,
-        Y,
-        Z,
-        A,
-        B,
-        C
+        public static void Move(
+            double feed,
+            double x, double y, double z
+            /*double? x = null, double? y = null, double? z = null,
+              double? a = null, double? b = null, double? c = null*/) =>
+            ThrowSupportedOnlyOnCnc();
+
+        public static void FastMove(
+            double? x = null, double? y = null, double? z = null,
+            double? a = null, double? b = null, double? c = null) =>
+            ThrowSupportedOnlyOnCnc();
+
+
+        public static void StartCoolant() => ThrowSupportedOnlyOnCnc();
+
+        public static void StopCoolant() => ThrowSupportedOnlyOnCnc();
+
+        public static class State
+        {
+            public static double Clock1 => throw new NotSupportedException();
+            public static double Clock2 => throw new NotSupportedException();
+
+        }
     }
 
-    public static void Move(double feed, params (Axis axis, double position)[] commands)
+    public static class Math
     {
-        throw new NotSupportedException("Only supported on the CNC.");
+        public static double Sin(double x) => throw new NotSupportedException();
+        public static double Cos(double x) => throw new NotSupportedException();
+        public static double Tan(double x) => throw new NotSupportedException();
+        public static double ASin(double x) => throw new NotSupportedException();
+        public static double ACos(double x) => throw new NotSupportedException();
+        public static double ATan(double x) => throw new NotSupportedException();
+        public static double ATan(double x, double y) => throw new NotSupportedException();
+        public static double Sqrt(double x) => throw new NotSupportedException();
+        public static double Abs(double x) => throw new NotSupportedException();
+        public static double Bin(double x) => throw new NotSupportedException();
+        public static double Bcd(double x) => throw new NotSupportedException();
+        public static double Round(double x) => throw new NotSupportedException();
+        public static double Fix(double x) => throw new NotSupportedException();
+        public static double Fup(double x) => throw new NotSupportedException();
+        public static double Log(double x) => throw new NotSupportedException();
+        public static double Exp(double x) => throw new NotSupportedException();
+        public static double Pow(double x, double y) => throw new NotSupportedException();
     }
-
-    public static int StartCoolant() => throw new NotSupportedException("Only supported on the CNC.");
 }
 
 public class Program
@@ -40,7 +78,7 @@ public class Program
         }
     }
 
-    public double AddTwoNumbers(int a, int b)
+    public static double AddTwoNumbers(int a, int b)
     {
         if (a > 5)
         {
@@ -49,11 +87,11 @@ public class Program
 
         a *= 2;
 
-        CNC.StartCoolant();
+        Cnc.Machine.StartCoolant();
 
-        //CNC.Move(a, (CNC.Axis.A, 5.0));
+        Cnc.Machine.Move(500.0, 5.0, 2.0, 34.0);
 
-        return Math.Sin(a + b);
+        return Cnc.Math.Sin(a + b);
     }
 
 

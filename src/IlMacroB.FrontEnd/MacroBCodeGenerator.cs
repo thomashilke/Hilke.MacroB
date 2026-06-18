@@ -139,17 +139,18 @@ public class MacroBCodeGenerator
 
     private static string RenderNcStatement(TacInstruction callInstruction)
     {
-        var functionNameMap = new Dictionary<string, string>
+        var functionNameMap = new List<NcStatement>
         {
-            { "StartCoolant", "M35" },
-            { "StopCoolant", "M39" }
-        };
+            new StartCoolantStatement(),
+            new StopCoolantStatement(),
+            new MoveStatement()
+        }.ToDictionary(statement => statement.Name);
 
         Debug.Assert(callInstruction.Op == Operand.Call);
 
         if (callInstruction.Arguments.First() is FunctionCall functionCall)
         {
-            return $"{functionNameMap[functionCall.FunctionName]}";
+            return $"{functionNameMap[functionCall.FunctionName].Render(callInstruction.Arguments)}";
         }
 
         throw new InvalidOperationException();
@@ -164,4 +165,52 @@ public class MacroBCodeGenerator
 
         throw new NotImplementedException();
     }
+
+    private sealed class MoveStatement : NcStatement
+    {
+        public MoveStatement() : base("Move"){}
+
+        public string GCode => "G01";
+
+        public override string Render(IEnumerable<object> arguments)
+        {
+            var parameters = new[] { "X", "Y", "Z", "F" };
+            return $"{GCode} {string.Join(" ", parameters.Zip(arguments.Skip(1), (p, a) => p + a.ToString()))}";
+        }
+    }
+
+    private sealed class StopCoolantStatement: NcStatement
+    {
+        public StopCoolantStatement() : base("StopCoolant")
+        {}
+
+        public string MCode => "M39";
+
+        public override string Render(IEnumerable<object> arguments)
+        {
+            return MCode;
+        }
+    }
+
+    private sealed class StartCoolantStatement: NcStatement
+    {
+        public StartCoolantStatement() : base("StartCoolant")
+        {}
+
+        public string MCode => "M35";
+
+        public override string Render(IEnumerable<object> arguments)
+        {
+            return MCode;
+        }
+    }
+}
+
+internal abstract class NcStatement
+{
+    private protected NcStatement(string name) => Name = name;
+
+    public string Name { get; }
+
+    public abstract string Render(IEnumerable<object> arguments);
 }
