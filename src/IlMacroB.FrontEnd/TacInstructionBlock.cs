@@ -10,19 +10,14 @@ public class TacInstructionBlock : IAdjacencyVertex<TacInstructionBlock>
 
     public TacInstructionBlock(
         BasicBlock basicBlock,
-        IEnumerable<TacInstruction> instructions,
-        TacInstruction? branchInstruction,
-        List<string> incomingStack,
-        List<string> outgoingStack)
+        IEnumerable<TacInstruction> bodyInstructions,
+        TacInstruction? branchInstruction)
     {
         BasicBlock = basicBlock ?? throw new ArgumentNullException(nameof(basicBlock));
         EntryOffset = BasicBlock.Instructions.First().Offset;
 
-        BodyInstructions = instructions?.ToList() ?? throw new ArgumentNullException(nameof(instructions));
+        BodyInstructions = bodyInstructions?.ToList() ?? throw new ArgumentNullException(nameof(bodyInstructions));
         BranchInstruction = branchInstruction;
-
-        IncomingStack = incomingStack ?? throw new ArgumentNullException(nameof(incomingStack));
-        OutgoingStack = outgoingStack ?? throw new ArgumentNullException(nameof(outgoingStack));
 
         _successors = new List<TacInstructionBlock>();
         _predecessors = new List<TacInstructionBlock>();
@@ -48,10 +43,6 @@ public class TacInstructionBlock : IAdjacencyVertex<TacInstructionBlock>
                 ? BodyInstructions
                 : BodyInstructions.Append(BranchInstruction));
 
-    public List<string> IncomingStack { get; }
-
-    public List<string> OutgoingStack { get; }
-
     public IReadOnlyList<TacInstructionBlock> Successors => _successors;
 
     public IReadOnlyList<TacInstructionBlock> Predecessors => _predecessors;
@@ -73,6 +64,22 @@ public class TacInstructionBlock : IAdjacencyVertex<TacInstructionBlock>
     {
         _successors.AddRange(successors);
     }
-}
 
-// Or MacroBCodeGenerator?
+    public void ReplaceSuccessor(TacInstructionBlock currentSuccessor, TacInstructionBlock newSuccessor)
+    {
+        if (_successors.Remove(currentSuccessor))
+        {
+            throw new ArgumentException();
+        }
+        _successors.Add(newSuccessor);
+    }
+
+    public void ReplacePredecessor(TacInstructionBlock currentPredecessor, TacInstructionBlock newPredecessor)
+    {
+        if (_predecessors.Remove(currentPredecessor))
+        {
+            throw new ArgumentException();
+        }
+        _predecessors.Add(newPredecessor);
+    }
+}

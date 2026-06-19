@@ -2,7 +2,7 @@ namespace Rollomatic.IlMacroB.FrontEnd;
 
 public class StaticSingleAssignmentRenameTransform : IControlFlowGraphTransformation<TacInstructionBlock>
 {
-    public void Transform(ControlFlowGraph<TacInstructionBlock> controlFlowGraph)
+    public ControlFlowGraph<TacInstructionBlock> Transform(ControlFlowGraph<TacInstructionBlock> controlFlowGraph)
     {
         var entry = controlFlowGraph.EntryBlock;
 
@@ -12,5 +12,7 @@ public class StaticSingleAssignmentRenameTransform : IControlFlowGraphTransforma
 
         var recursiveRenamer = new SingleStaticAssignmentRecursiveRenamer();
         recursiveRenamer.Rename(entry, immediateDominator);
+
+        return controlFlowGraph;
     }
 }

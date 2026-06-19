@@ -2,7 +2,7 @@ namespace Rollomatic.IlMacroB.FrontEnd;
 
 public class ConstantPropagatorTransform : IControlFlowGraphTransformation<TacInstructionBlock>
 {
-    public void Transform(ControlFlowGraph<TacInstructionBlock> controlFlowGraph)
+    public ControlFlowGraph<TacInstructionBlock> Transform(ControlFlowGraph<TacInstructionBlock> controlFlowGraph)
     {
         var dominatorTree = DominanceEngine.ComputeDominatorTree(controlFlowGraph);
 
@@ -14,6 +14,8 @@ public class ConstantPropagatorTransform : IControlFlowGraphTransformation<TacIn
         {
             didChange &= SubstituteInBlock(dominatorTree.DepthFirstIterator(dominatorTree.Root), ref substitutions);
         }
+
+        return controlFlowGraph;
     }
 
     private static bool SubstituteInBlock(

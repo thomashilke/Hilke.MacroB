@@ -59,7 +59,8 @@ public class MacroBCodeGenerator
             { Operand.Sub, "-" },
             { Operand.Mul, "*" },
             { Operand.Div, "/" },
-            { Operand.Cgt, "<" },
+            { Operand.Cgt, ">" },
+            { Operand.Clt, "<" },
             { Operand.Ble, "LE" },
             { Operand.Blt, "LT" },
             { Operand.Bge, "GE" },
@@ -84,7 +85,7 @@ public class MacroBCodeGenerator
             switch (instruction.Op)
             {
                 case Operand.Assign:
-                    sb.AppendLine($"{RenderOperand(instruction.Arguments.Single() as SsaVariable)}");
+                    sb.AppendLine($"{RenderOperand(instruction.Arguments.Single())}");
                     break;
 
                 case Operand.Add:
@@ -92,12 +93,89 @@ public class MacroBCodeGenerator
                 case Operand.Mul:
                 case Operand.Div:
                 case Operand.Cgt:
+                case Operand.Clt:
+                case Operand.Ceq:
+                case Operand.Or:
+                case Operand.XOr:
+                case Operand.And:
                     sb.AppendLine(
                         $"{RenderOperand(instruction.Arguments.First())}{binaryOperatorMap[instruction.Op]}{RenderOperand(instruction.Arguments.Last())}");
                     break;
 
                 case Operand.Sin:
                     sb.AppendLine($"SIN[{RenderOperand(instruction.Arguments.First())}]");
+                    break;
+
+                case Operand.Cos:
+                    sb.AppendLine($"COS[{RenderOperand(instruction.Arguments.First())}]");
+                    break;
+
+                case Operand.Tan:
+                    sb.AppendLine($"TAN[{RenderOperand(instruction.Arguments.First())}]");
+                    break;
+
+                case Operand.ASin:
+                    sb.AppendLine($"ASIN[{RenderOperand(instruction.Arguments.First())}]");
+                    break;
+
+                case Operand.ACos:
+                    sb.AppendLine($"ACOS[{RenderOperand(instruction.Arguments.First())}]");
+                    break;
+
+                case Operand.ATan:
+                    sb.AppendLine($"ATAN[{RenderOperand(instruction.Arguments.First())}]");
+                    break;
+
+                case Operand.Sqrt:
+                    sb.AppendLine($"SQRT[{RenderOperand(instruction.Arguments.First())}]");
+                    break;
+
+                case Operand.Abs:
+                    sb.AppendLine($"ABS[{RenderOperand(instruction.Arguments.First())}]");
+                    break;
+
+                case Operand.Bin:
+                    sb.AppendLine($"BIN[{RenderOperand(instruction.Arguments.First())}]");
+                    break;
+
+                case Operand.Bcd:
+                    sb.AppendLine($"BCD[{RenderOperand(instruction.Arguments.First())}]");
+                    break;
+
+                case Operand.Round:
+                    sb.AppendLine($"ROUND[{RenderOperand(instruction.Arguments.First())}]");
+                    break;
+
+                case Operand.Fix:
+                    sb.AppendLine($"FIX[{RenderOperand(instruction.Arguments.First())}]");
+                    break;
+
+                case Operand.Fup:
+                    sb.AppendLine($"FUP[{RenderOperand(instruction.Arguments.First())}]");
+                    break;
+
+                case Operand.Ln:
+                    sb.AppendLine($"Ln[{RenderOperand(instruction.Arguments.First())}]");
+                    break;
+
+                case Operand.Exp:
+                    sb.AppendLine($"EXP[{RenderOperand(instruction.Arguments.First())}]");
+                    break;
+
+                case Operand.Pow:
+                    sb.AppendLine($"POW[{RenderOperand(instruction.Arguments.First())}]");
+                    break;
+
+                case Operand.Adp:
+                    sb.AppendLine($"ADP[{RenderOperand(instruction.Arguments.First())}]");
+                    break;
+
+                case Operand.Rem:
+                    sb.AppendLine($"REM[{RenderOperand(instruction.Arguments.First())}]");
+                    break;
+
+                case Operand.Neg:
+                    sb.AppendLine($"-[{RenderOperand(instruction.Arguments.First())}]");
                     break;
 
                 case Operand.Call:

@@ -2,5 +2,5 @@ namespace Rollomatic.IlMacroB.FrontEnd;
 
 public interface IControlFlowGraphTransformation<TBlock> where TBlock : IAdjacencyVertex<TBlock>
 {
-    void Transform(ControlFlowGraph<TBlock> controlFlowGraph);
+    ControlFlowGraph<TBlock> Transform(ControlFlowGraph<TBlock> controlFlowGraph);
 }

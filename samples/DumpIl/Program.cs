@@ -6,11 +6,8 @@ namespace Rollomatic.IlMacroB.Samples.DumpIl;
 
 // ToDo: 1. Merge consecutive control flow blocks
 //       2. Rebuild mathematical expressions
-//       3. Whole program code generation (fallthrough simplification, etc, see 1.)
-//       4. Detect and reconstruct IF-block
-//       5. Initialize the procedure arguments
+//       4. Detect and reconstruct IF-block (Strong Connected Components?)
 //       6. Implement all mathematical operators,
-//       7. Sketch an interface to the CNC
 //       8. Logging?
 //       9. Debugging?
 //       10. Synchronous communication chanel

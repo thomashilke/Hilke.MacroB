@@ -13,10 +13,13 @@ public sealed class ConsoleDumpDevice : Cnc.IDevice
             ControlFlowGraphBuilder.Create(instructions));
 
         var renameTransform = new StaticSingleAssignmentRenameTransform();
-        renameTransform.Transform(tacControlFlowGraph);
+        tacControlFlowGraph = renameTransform.Transform(tacControlFlowGraph);
 
         var dceTransform = new DeadCodeEliminationTransform();
-        dceTransform.Transform(tacControlFlowGraph);
+        tacControlFlowGraph = dceTransform.Transform(tacControlFlowGraph);
+
+        var basicBlockMergeTransform = new BasicBlockMergeTransform();
+        tacControlFlowGraph = basicBlockMergeTransform.Transform(tacControlFlowGraph);
 
         var codeGenerator = new MacroBCodeGenerator(tacControlFlowGraph);
 

@@ -19,7 +19,6 @@ namespace Rollomatic.IlMacroB.Demo;
 
 public class Program
 {
-
     public static void IsoProgramDemo(int a, int b)
     {
         if (a > 5)
@@ -27,8 +26,12 @@ public class Program
             a -= 5;
         }
 
-        a *= 2;
+        for (var i = 0; i < 3; ++i)
+        {
+            a += i;
+        }
 
+        a *= 2;
         Cnc.Machine.StartCoolant();
         Cnc.Machine.Move(
             feed: 500.0,

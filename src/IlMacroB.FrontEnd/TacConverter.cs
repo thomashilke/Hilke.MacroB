@@ -58,9 +58,7 @@ public static class TacConverter
                                                 return new TacInstructionBlock(
                                                     block,
                                                     tacInstructions.SkipLast(1),
-                                                    tacInstructions.Last(),
-                                                    incomingStack,
-                                                    outgoingStack);
+                                                    tacInstructions.Last());
                                             }
 
                                             return new TacInstructionBlock(
@@ -68,9 +66,7 @@ public static class TacConverter
                                                 tacInstructions,
                                                 new TacInstruction(
                                                     Operand.Br,
-                                                    new JumpTarget(block.Instructions.Last().NextInstructionOffset)),
-                                                incomingStack,
-                                                outgoingStack);
+                                                    new JumpTarget(block.Instructions.Last().NextInstructionOffset)));
                                         })
                                         .ToList();
 
@@ -209,7 +205,7 @@ public static class TacConverter
                 var value = evaluationStack.Count > 0 ? evaluationStack.Pop() : throw new InvalidOperationException();
                 tacInstructions.Add(new TacInstruction($"arg_{destination}", Operand.Assign, value));
             }
-            else if (opName == "add" || opName == "sub" || opName == "mul" || opName == "div" || opName == "cgt")
+            else if (opName == "add" || opName == "sub" || opName == "mul" || opName == "div" || opName == "cgt" || opName == "clt")
             {
                 var right = evaluationStack.Pop();
                 var left = evaluationStack.Pop();

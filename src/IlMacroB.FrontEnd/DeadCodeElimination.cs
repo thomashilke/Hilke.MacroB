@@ -3,7 +3,7 @@ namespace Rollomatic.IlMacroB.FrontEnd;
 public class DeadCodeEliminationTransform : IControlFlowGraphTransformation<TacInstructionBlock>
 {
     /// <inheritdoc />
-    public void Transform(ControlFlowGraph<TacInstructionBlock> controlFlowGraph)
+    public ControlFlowGraph<TacInstructionBlock> Transform(ControlFlowGraph<TacInstructionBlock> controlFlowGraph)
     {
         var dominanceTree = DominanceEngine.ComputeDominatorTree(controlFlowGraph.Blocks);
 
@@ -11,6 +11,8 @@ public class DeadCodeEliminationTransform : IControlFlowGraphTransformation<TacI
         {
             ;
         }
+
+        return controlFlowGraph;
     }
 
     private bool RunIteration(DominatorTree dominanceTree)
