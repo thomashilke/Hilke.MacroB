@@ -18,6 +18,21 @@ public class LivenessRangeInterferenceAnalysis
         var ranges = livenessRangeAnalysis.Ranges;
         var livenessRangeInterferencesGraph = new UndirectedGraph<SsaVariable>(ranges.GetRepresentants());
 
+        // All the arguments version 0 must share distinct registers in the entry block.
+        var argumentBaseNames = livenessRangeAnalysis.Variables.Select(variable => variable.Name).Distinct().ToList();
+        for (var i = 0; i < argumentBaseNames.Count - 1; ++i)
+        {
+            for (var j = i + 1; j < argumentBaseNames.Count; ++j)
+            {
+                var arg1 = new SsaVariable(argumentBaseNames[i]);
+                var arg2 = new SsaVariable(argumentBaseNames[j]);
+
+                livenessRangeInterferencesGraph.AddEdge(
+                    ranges.Find(arg1), 
+                    ranges.Find(arg2));
+            }
+        }
+
         foreach (var block in controlFlowGraph.Blocks)
         {
             var liveNow = livenessAnalysis.LiveOut[block].ToHashSet();

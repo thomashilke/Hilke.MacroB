@@ -42,6 +42,7 @@ public enum Operand
 
     BrTrue,
     BrFalse,
+
     Ble,
     Blt,
     Bge,
@@ -49,7 +50,9 @@ public enum Operand
     Beq,
     Bne,
     Br,
+
     Call,
+
     Ret,
     Phi
 }

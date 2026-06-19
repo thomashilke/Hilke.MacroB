@@ -1,64 +1,21 @@
-﻿using Rollomatic.IlMacroB.FrontEnd;
+﻿using IlMacroB.Host.FrontEnd;
+
+using Rollomatic.IlMacroB.FrontEnd;
 
 namespace Rollomatic.IlMacroB.Samples.DumpIl;
 
-public static class Cnc
-{
-    private static void ThrowSupportedOnlyOnCnc() =>
-        throw new NotSupportedException("Only supported on the Cnc.");
-
-    public static void RaiseAlarm(int alarm, string message) => ThrowSupportedOnlyOnCnc();
-
-    public static void Stop(string message) => ThrowSupportedOnlyOnCnc();
-
-    public static class Machine
-    {
-        public static void Move(
-            double feed,
-            double x, double y, double z
-            /*double? x = null, double? y = null, double? z = null,
-              double? a = null, double? b = null, double? c = null*/) =>
-            ThrowSupportedOnlyOnCnc();
-
-        public static void FastMove(
-            double? x = null, double? y = null, double? z = null,
-            double? a = null, double? b = null, double? c = null) =>
-            ThrowSupportedOnlyOnCnc();
-
-
-        public static void StartCoolant() => ThrowSupportedOnlyOnCnc();
-
-        public static void StopCoolant() => ThrowSupportedOnlyOnCnc();
-
-        public static class State
-        {
-            public static double Clock1 => throw new NotSupportedException();
-            public static double Clock2 => throw new NotSupportedException();
-
-        }
-    }
-
-    public static class Math
-    {
-        public static double Sin(double x) => throw new NotSupportedException();
-        public static double Cos(double x) => throw new NotSupportedException();
-        public static double Tan(double x) => throw new NotSupportedException();
-        public static double ASin(double x) => throw new NotSupportedException();
-        public static double ACos(double x) => throw new NotSupportedException();
-        public static double ATan(double x) => throw new NotSupportedException();
-        public static double ATan(double x, double y) => throw new NotSupportedException();
-        public static double Sqrt(double x) => throw new NotSupportedException();
-        public static double Abs(double x) => throw new NotSupportedException();
-        public static double Bin(double x) => throw new NotSupportedException();
-        public static double Bcd(double x) => throw new NotSupportedException();
-        public static double Round(double x) => throw new NotSupportedException();
-        public static double Fix(double x) => throw new NotSupportedException();
-        public static double Fup(double x) => throw new NotSupportedException();
-        public static double Log(double x) => throw new NotSupportedException();
-        public static double Exp(double x) => throw new NotSupportedException();
-        public static double Pow(double x, double y) => throw new NotSupportedException();
-    }
-}
+// ToDo: 1. Merge consecutive control flow blocks
+//       2. Rebuild mathematical expressions
+//       3. Whole program code generation (fallthrough simplification, etc, see 1.)
+//       4. Detect and reconstruct IF-block
+//       5. Initialize the procedure arguments
+//       6. Implement all mathematical operators,
+//       7. Sketch an interface to the CNC
+//       8. Logging?
+//       9. Debugging?
+//       10. Synchronous communication chanel
+//       11. Read/Write ordering?
+//       12. Simulation/Unit testing?
 
 public class Program
 {
@@ -78,7 +35,7 @@ public class Program
         }
     }
 
-    public static double AddTwoNumbers(int a, int b)
+    public static void IsoProgramDemo(int a, int b)
     {
         if (a > 5)
         {
@@ -88,30 +45,25 @@ public class Program
         a *= 2;
 
         Cnc.Machine.StartCoolant();
-
-        Cnc.Machine.Move(500.0, 5.0, 2.0, 34.0);
-
-        return Cnc.Math.Sin(a + b);
+        Cnc.Machine.Move(
+            feed: 500.0,
+            x: Cnc.Math.Sin(a + b),
+            y: 2.0,
+            z: 34.0);
+        Cnc.Machine.StopCoolant();
     }
-
-
-    // ToDo: 1. Merge consecutive control flow blocks
-    //       2. Rebuild mathematical expressions
-    //       3. Whole program code generation (fallthrough simplification, etc, see 1.)
-    //       4. Detect and reconstruct IF-block
-    //       5. Initialize the procedure arguments
-    //       6. Implement all mathematical operators,
-    //       7. Sketch an interface to the CNC
-    //       8. Logging?
-    //       9. Debugging?
-    //       10. Synchronous communication chanel
-    //       11. Read/Write ordering?
-    //       12. Simulation/Unit testing?
 
     public static int Main(string[] args)
     {
+        Demo();
+
+        return 0;
+    }
+
+    public static void Demo()
+    {
         //var method = typeof(Program).GetMethod(nameof(IterateSomeArray));
-        var method = typeof(Program).GetMethod(nameof(AddTwoNumbers));
+        var method = typeof(Program).GetMethod(nameof(IsoProgramDemo));
 
         var instructions = IlParser.ParseMethod(method);
         var controlFlowGraph = ControlFlowGraphBuilder.Create(instructions);
@@ -124,6 +76,7 @@ public class Program
         dceTransform.Transform(tacControlFlowGraph);
 
         var constantPropagationTransform = new ConstantPropagatorTransform();
+
         //constantPropagationTransform.Transform(tacControlFlowGraph);
 
         var livenessAnalysis = LivenessAnalysis.Analyse(tacControlFlowGraph);
@@ -135,6 +88,7 @@ public class Program
         foreach (var block in blockOrderAnalysis.BlockOrder)
         {
             Console.WriteLine("\n" + GetBlockName(block));
+
             //Console.WriteLine($"Incoming stack: [{string.Join(", ", block.IncomingStack)}]");
             foreach (var instruction in block.Instructions)
             {
@@ -151,7 +105,8 @@ public class Program
         Console.WriteLine("");
         foreach (var range in livenessRangeAnalysis.GetRanges())
         {
-            Console.WriteLine($"Range: {range.Representent} = [{string.Join(", ", range.Set)}], color = {coloring[range.Representent]}");
+            Console.WriteLine(
+                $"Range: {range.Representent} = [{string.Join(", ", range.Set)}], color = {coloring[range.Representent]}");
         }
 
         Console.WriteLine("");
@@ -164,12 +119,7 @@ public class Program
         }
 
         var codeGen = new MacroBCodeGenerator(tacControlFlowGraph);
-        foreach (var block in blockOrderAnalysis.BlockOrder)
-        {
-            Console.WriteLine(codeGen.GenerateCode(block));
-        }
-
-        return 0;
+        Console.WriteLine(codeGen.GenerateCode());
     }
 
     private static string GetBlockName(TacInstructionBlock block)

@@ -305,9 +305,12 @@ public static class TacConverter
             {
                 var retVal = evaluationStack.Count > 0
                                  ? evaluationStack.Pop()
-                                 : throw new InvalidOperationException();
+                                 : null;
 
-                tacInstructions.Add(new TacInstruction(Operand.Ret, retVal));
+                tacInstructions.Add(
+                    retVal is null 
+                    ? new TacInstruction(Operand.Ret, retVal) 
+                    : new TacInstruction(Operand.Ret));
             }
             else if (opName == "pop")
             {

@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\IlMacroB.FrontEnd\IlMacroB.FrontEnd.csproj" />
+    <ProjectReference Include="..\..\src\IlMacroB.Host.FrontEnd\IlMacroB.Host.FrontEnd.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

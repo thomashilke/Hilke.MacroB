@@ -3,12 +3,12 @@ using System.Text;
 
 namespace Rollomatic.IlMacroB.FrontEnd;
 
-
 public class MacroBCodeGenerator
 {
     private readonly Dictionary<SsaVariable, int> _registerMap;
     private readonly Dictionary<TacInstructionBlock, int> _sequenceNumberMap;
     private readonly Dictionary<int, TacInstructionBlock> _blockJumpTargetMap;
+    private readonly BasicBlockOrderAnalysis _blockOrderAnalysis;
 
     public MacroBCodeGenerator(ControlFlowGraph<TacInstructionBlock> controlFlowGraph)
     {
@@ -16,19 +16,42 @@ public class MacroBCodeGenerator
         var livenessRangeAnalysis = LivenessRangeAnalysis.Analyse(controlFlowGraph);
         var livenessRangeInterferenceAnalysis = LivenessRangeInterferenceAnalysis.Analyse(controlFlowGraph);
         var coloring = livenessRangeInterferenceAnalysis.LivenessRangeInterferencesGraph.GreedyColoring();
-        var blockOrderAnalysis = BasicBlockOrderAnalysis.Analyse(controlFlowGraph, new NaiveCostModel());
+        _blockOrderAnalysis = BasicBlockOrderAnalysis.Analyse(controlFlowGraph, new NaiveCostModel());
 
         _registerMap = controlFlowGraph.GetVariables()
                                        .ToDictionary(
                                            variable => variable,
-                                           variable => coloring[livenessRangeAnalysis.Ranges.Find(variable)]);
+                                           variable => coloring[livenessRangeAnalysis.Ranges.Find(variable)] + 1);
 
-        _sequenceNumberMap = blockOrderAnalysis.BlockOrder.Index()
-                                               .ToDictionary(kvp => kvp.Item, kvp => 10 * (kvp.Index + 1));
-        _blockJumpTargetMap = blockOrderAnalysis.BlockOrder.ToDictionary(block => block.EntryOffset, block => block);
+        _sequenceNumberMap = _blockOrderAnalysis.BlockOrder.Index()
+                                                .ToDictionary(kvp => kvp.Item, kvp => 10 * (kvp.Index + 1));
+        _blockJumpTargetMap = _blockOrderAnalysis.BlockOrder.ToDictionary(block => block.EntryOffset, block => block);
     }
 
-    public string GenerateCode(TacInstructionBlock block)
+    public string GenerateCode(params object[] arguments)
+    {
+        var sb = new StringBuilder();
+
+        for (var argumentIndex = 0; argumentIndex < arguments.Length; ++argumentIndex)
+        {
+            var argumentVariable = new SsaVariable($"arg_{argumentIndex}");
+            sb.AppendLine($"{RenderOperand(argumentVariable)} = {arguments[argumentIndex].ToString()}");
+        }
+
+        for (var i = 0; i < _blockOrderAnalysis.BlockOrder.Count; ++i)
+        {
+            var block = _blockOrderAnalysis.BlockOrder[i];
+            var successorJumpTarget = i + 1 == _blockOrderAnalysis.BlockOrder.Count
+                                          ? null
+                                          : new JumpTarget(_blockOrderAnalysis.BlockOrder[i + 1].EntryOffset);
+
+            sb.Append(GenerateCode(block, successorJumpTarget));
+        }
+
+        return sb.ToString();
+    }
+
+    private string GenerateCode(TacInstructionBlock block, JumpTarget? successorJumpTarget)
     {
         var binaryOperatorMap = new Dictionary<Operand, string>
         {
@@ -91,14 +114,56 @@ public class MacroBCodeGenerator
             switch (branchInstruction.Op)
             {
                 case Operand.BrTrue:
-                    sb.AppendLine(
-                        $"IF[{RenderOperand(branchInstruction.Arguments.ElementAt(0))} NEQ 0]GOTO {RenderJumpTarget(branchInstruction.Arguments.ElementAt(1))}");
-                    sb.AppendLine($"GOTO {RenderJumpTarget(branchInstruction.Arguments.ElementAt(2))}");
+                {
+                    var condition = branchInstruction.Arguments.ElementAt(0);
+                    var trueJumpTarget = branchInstruction.Arguments.ElementAt(1) as JumpTarget;
+                    var falseJumpTarget = branchInstruction.Arguments.ElementAt(2) as JumpTarget;
+
+                    if (successorJumpTarget is JumpTarget successor
+                     && (successor == trueJumpTarget || successor == falseJumpTarget))
+                    {
+                        if (trueJumpTarget == successor)
+                        {
+                            sb.AppendLine(
+                                $"IF[{RenderOperand(condition)} EQ 0]GOTO {RenderJumpTarget(falseJumpTarget)}");
+                        }
+                        else if (falseJumpTarget == successor)
+                        {
+                            sb.AppendLine($"IF[{RenderOperand(condition)}]GOTO {RenderJumpTarget(trueJumpTarget)}");
+                        }
+                    }
+                    else
+                    {
+                        sb.AppendLine($"IF[{RenderOperand(condition)}]GOTO {RenderJumpTarget(trueJumpTarget)}");
+                        sb.AppendLine($"GOTO {RenderJumpTarget(falseJumpTarget)}");
+                    }
+                }
                     break;
                 case Operand.BrFalse:
-                    sb.AppendLine(
-                        $"IF[{RenderOperand(branchInstruction.Arguments.ElementAt(0))} EQ 0]GOTO {RenderJumpTarget(branchInstruction.Arguments.ElementAt(1))}");
-                    sb.AppendLine($"GOTO {RenderJumpTarget(branchInstruction.Arguments.ElementAt(2))}");
+                {
+                    var condition = branchInstruction.Arguments.ElementAt(0);
+                    var trueJumpTarget = branchInstruction.Arguments.ElementAt(1) as JumpTarget;
+                    var falseJumpTarget = branchInstruction.Arguments.ElementAt(2) as JumpTarget;
+
+                    if (successorJumpTarget is JumpTarget successor
+                     && (successor == trueJumpTarget || successor == falseJumpTarget))
+                    {
+                        if (trueJumpTarget == successor)
+                        {
+                            sb.AppendLine($"IF[{RenderOperand(condition)}]GOTO {RenderJumpTarget(falseJumpTarget)}");
+                        }
+                        else if (falseJumpTarget == successor)
+                        {
+                            sb.AppendLine(
+                                $"IF[{RenderOperand(condition)} EQ 0]GOTO {RenderJumpTarget(trueJumpTarget)}");
+                        }
+                    }
+                    else
+                    {
+                        sb.AppendLine($"IF[{RenderOperand(condition)} EQ 0]GOTO {RenderJumpTarget(trueJumpTarget)}");
+                        sb.AppendLine($"GOTO {RenderJumpTarget(falseJumpTarget)}");
+                    }
+                }
                     break;
 
                 case Operand.Ble:
@@ -107,13 +172,45 @@ public class MacroBCodeGenerator
                 case Operand.Bgt:
                 case Operand.Beq:
                 case Operand.Bne:
-                    sb.AppendLine(
-                        $"IF[{RenderOperand(branchInstruction.Arguments.ElementAt(0))} {binaryOperatorMap[branchInstruction.Op]} {RenderOperand(branchInstruction.Arguments.ElementAt(1))}]GOTO {RenderJumpTarget(branchInstruction.Arguments.ElementAt(2))}");
-                    sb.AppendLine($"GOTO {RenderJumpTarget(branchInstruction.Arguments.ElementAt(3))}");
+                {
+                    var operand1 = branchInstruction.Arguments.ElementAt(0);
+                    var operand2 = branchInstruction.Arguments.ElementAt(1);
+                    var trueJumpTarget = branchInstruction.Arguments.ElementAt(2) as JumpTarget;
+                    var falseJumpTarget = branchInstruction.Arguments.ElementAt(3) as JumpTarget;
+
+                    if (successorJumpTarget is JumpTarget successor
+                     && (successor == trueJumpTarget || successor == falseJumpTarget))
+                    {
+                        if (trueJumpTarget == successor)
+                        {
+                            sb.AppendLine(
+                                $"IF[{RenderOperand(operand1)} {binaryOperatorMap[branchInstruction.Op]} {RenderOperand(operand2)}]GOTO {RenderJumpTarget(falseJumpTarget)}");
+                        }
+                        else if (falseJumpTarget == successor)
+                        {
+                            sb.AppendLine(
+                                $"IF[{RenderOperand(operand2)} {binaryOperatorMap[Inverse(branchInstruction.Op)]} {RenderOperand(operand2)}]GOTO {RenderJumpTarget(trueJumpTarget)}");
+                        }
+                    }
+                    else
+                    {
+                        sb.AppendLine(
+                            $"IF[{RenderOperand(operand1)} {binaryOperatorMap[branchInstruction.Op]} {RenderOperand(operand2)}]GOTO {RenderJumpTarget(trueJumpTarget)}");
+                        sb.AppendLine($"GOTO {RenderJumpTarget(falseJumpTarget)}");
+                    }
+                }
+
                     break;
 
                 case Operand.Br:
-                    sb.AppendLine($"GOTO {RenderJumpTarget(branchInstruction.Arguments.Single())}");
+                {
+                    var jumpTarget = branchInstruction.Arguments.ElementAt(0);
+                    if (successorJumpTarget is not JumpTarget successor
+                     || successor == jumpTarget)
+                    {
+                        sb.AppendLine($"GOTO {RenderJumpTarget(branchInstruction.Arguments.Single())}");
+                    }
+                }
                     break;
 
                 case Operand.Ret:
@@ -128,6 +225,22 @@ public class MacroBCodeGenerator
         return sb.ToString();
     }
 
+    private static Operand Inverse(Operand op)
+    {
+        return op switch
+        {
+            Operand.BrTrue => Operand.BrFalse,
+            Operand.BrFalse => Operand.BrTrue,
+            Operand.Ble => Operand.Bgt,
+            Operand.Blt => Operand.Bge,
+            Operand.Bge => Operand.Blt,
+            Operand.Bgt => Operand.Ble,
+            Operand.Beq => Operand.Bne,
+            Operand.Bne => Operand.Beq,
+            _ => throw new NotSupportedException()
+        };
+    }
+
     private string RenderOperand(object operand)
     {
         return operand switch
@@ -137,7 +250,7 @@ public class MacroBCodeGenerator
         };
     }
 
-    private static string RenderNcStatement(TacInstruction callInstruction)
+    private string RenderNcStatement(TacInstruction callInstruction)
     {
         var functionNameMap = new List<NcStatement>
         {
@@ -150,7 +263,8 @@ public class MacroBCodeGenerator
 
         if (callInstruction.Arguments.First() is FunctionCall functionCall)
         {
-            return $"{functionNameMap[functionCall.FunctionName].Render(callInstruction.Arguments)}";
+            return
+                $"{functionNameMap[functionCall.FunctionName].Render(callInstruction.Arguments.Skip(1).Select(arg => RenderOperand(arg)))}";
         }
 
         throw new InvalidOperationException();
@@ -165,52 +279,56 @@ public class MacroBCodeGenerator
 
         throw new NotImplementedException();
     }
-
-    private sealed class MoveStatement : NcStatement
-    {
-        public MoveStatement() : base("Move"){}
-
-        public string GCode => "G01";
-
-        public override string Render(IEnumerable<object> arguments)
-        {
-            var parameters = new[] { "X", "Y", "Z", "F" };
-            return $"{GCode} {string.Join(" ", parameters.Zip(arguments.Skip(1), (p, a) => p + a.ToString()))}";
-        }
-    }
-
-    private sealed class StopCoolantStatement: NcStatement
-    {
-        public StopCoolantStatement() : base("StopCoolant")
-        {}
-
-        public string MCode => "M39";
-
-        public override string Render(IEnumerable<object> arguments)
-        {
-            return MCode;
-        }
-    }
-
-    private sealed class StartCoolantStatement: NcStatement
-    {
-        public StartCoolantStatement() : base("StartCoolant")
-        {}
-
-        public string MCode => "M35";
-
-        public override string Render(IEnumerable<object> arguments)
-        {
-            return MCode;
-        }
-    }
 }
 
 internal abstract class NcStatement
 {
-    private protected NcStatement(string name) => Name = name;
+    private protected NcStatement(string name)
+    {
+        Name = name;
+    }
 
     public string Name { get; }
 
     public abstract string Render(IEnumerable<object> arguments);
+}
+
+internal sealed class MoveStatement : NcStatement
+{
+    public MoveStatement()
+        : base("Move") { }
+
+    public string GCode => "G01";
+
+    public override string Render(IEnumerable<object> arguments)
+    {
+        var parameters = new[] { "X", "Y", "Z", "F" };
+        return $"{GCode} {string.Join(" ", parameters.Zip(arguments, (p, a) => p + a))}";
+    }
+}
+
+internal sealed class StopCoolantStatement : NcStatement
+{
+    public StopCoolantStatement()
+        : base("StopCoolant") { }
+
+    public string MCode => "M39";
+
+    public override string Render(IEnumerable<object> arguments)
+    {
+        return MCode;
+    }
+}
+
+internal sealed class StartCoolantStatement : NcStatement
+{
+    public StartCoolantStatement()
+        : base("StartCoolant") { }
+
+    public string MCode => "M35";
+
+    public override string Render(IEnumerable<object> arguments)
+    {
+        return MCode;
+    }
 }

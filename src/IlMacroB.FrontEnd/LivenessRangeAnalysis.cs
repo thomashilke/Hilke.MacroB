@@ -4,18 +4,21 @@ namespace Rollomatic.IlMacroB.FrontEnd;
 
 public class LivenessRangeAnalysis
 {
-    private LivenessRangeAnalysis(UnionFind<SsaVariable> ranges)
+    private LivenessRangeAnalysis(IEnumerable<SsaVariable> variables, UnionFind<SsaVariable> ranges)
     {
+        Variables = variables.ToList();
         Ranges = ranges;
     }
+
+    public IReadOnlyList<SsaVariable> Variables { get; }
 
     public UnionFind<SsaVariable> Ranges { get; }
 
     public static LivenessRangeAnalysis Analyse(ControlFlowGraph<TacInstructionBlock> controlFlowGraph)
     {
         var ranges = new UnionFind<SsaVariable>();
-
-        foreach (var variable in controlFlowGraph.GetVariables())
+        var variables = controlFlowGraph.GetVariables();
+        foreach (var variable in variables)
         {
             ranges.Find(variable);
         }
@@ -29,7 +32,7 @@ public class LivenessRangeAnalysis
             }
         }
 
-        return new LivenessRangeAnalysis(ranges);
+        return new LivenessRangeAnalysis(variables, ranges);
     }
 
     public IEnumerable<(SsaVariable Representent, IEnumerable<SsaVariable> Set)> GetRanges()

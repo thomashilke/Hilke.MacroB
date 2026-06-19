@@ -1,8 +1,10 @@
 <Solution>
   <Folder Name="/samples/">
+    <Project Path="samples/Demo/Demo.csproj" Id="6ef803f7-f542-4f52-bff4-f18d3de0e7c9" />
     <Project Path="samples/DumpIl/DumpIl.csproj" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/IlMacroB.FrontEnd/IlMacroB.FrontEnd.csproj" />
+    <Project Path="src/IlMacroB.Host.FrontEnd/IlMacroB.Host.FrontEnd.csproj" Id="eedb2b5d-4872-4e43-99cb-513a2e2488ba" />
   </Folder>
 </Solution>
