@@ -304,8 +304,8 @@ public static class TacConverter
                                  : null;
 
                 tacInstructions.Add(
-                    retVal is null 
-                    ? new TacInstruction(Operand.Ret, retVal) 
+                    retVal is null
+                    ? new TacInstruction(Operand.Ret, retVal)
                     : new TacInstruction(Operand.Ret));
             }
             else if (opName == "pop")
