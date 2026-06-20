@@ -45,7 +45,9 @@ public static class TacConverter
             }
         }
 
-        var tacBlocks = controlFlowGraph.Blocks.Select(block =>
+        var tacBlocks = controlFlowGraph.Blocks.ToDictionary(
+            block => block,
+            block =>
                                         {
                                             var incomingStack = context[block].IncomingStack;
                                             var tacInstructions = ConvertBlockToTac(
@@ -56,29 +58,32 @@ public static class TacConverter
                                             if (tacInstructions.Last().IsBranch)
                                             {
                                                 return new TacInstructionBlock(
-                                                    block,
+                                                    block.Id,
+                                                    block.Instructions.First().Offset,
+                                                    block.IsInitial,
                                                     tacInstructions.SkipLast(1),
                                                     tacInstructions.Last());
                                             }
 
                                             return new TacInstructionBlock(
-                                                block,
+                                                block.Id,
+                                                block.Instructions.First().Offset,
+                                                block.IsInitial,
                                                 tacInstructions,
                                                 new TacInstruction(
                                                     Operand.Br,
                                                     new JumpTarget(block.Instructions.Last().NextInstructionOffset)));
-                                        })
-                                        .ToList();
+                                        });
 
-        var blockMap = tacBlocks.ToDictionary(b => b.BasicBlock);
+        var blockMap = tacBlocks.ToDictionary(b => b.Value, b => b.Key);
 
-        foreach (var tacBlock in tacBlocks)
+        foreach (var tacBlock in tacBlocks.Values)
         {
-            tacBlock.AddPredecessors(tacBlock.BasicBlock.Predecessors.Select(p => blockMap[p]).ToList());
-            tacBlock.AddSuccessors(tacBlock.BasicBlock.Successors.Select(p => blockMap[p]).ToList());
+            tacBlock.AddPredecessors(blockMap[tacBlock].Predecessors.Select(p => tacBlocks[p]).ToList());
+            tacBlock.AddSuccessors(blockMap[tacBlock].Successors.Select(p => tacBlocks[p]).ToList());
         }
 
-        return new ControlFlowGraph<TacInstructionBlock>(tacBlocks, blockMap[controlFlowGraph.EntryBlock]);
+        return new ControlFlowGraph<TacInstructionBlock>(tacBlocks.Values.ToList(), tacBlocks[controlFlowGraph.EntryBlock]);
     }
 
     public static List<TacInstruction> ConvertBlockToTac(

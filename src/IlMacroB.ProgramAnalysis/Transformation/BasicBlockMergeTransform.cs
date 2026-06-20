@@ -41,8 +41,13 @@ public class BasicBlockMergeTransform : IControlFlowGraphTransformation<TacInstr
 
     private static TacInstructionBlock Merge(TacInstructionBlock block1, TacInstructionBlock block2)
     {
-        var newBlock = new TacInstructionBlock(block1.BasicBlock, block1.BodyInstructions.Concat(block2.BodyInstructions), block2.BranchInstruction);
-        
+        var newBlock = new TacInstructionBlock(
+            block1.Id,
+            block1.EntryOffset,
+            block1.IsEntry,
+            block1.BodyInstructions.Concat(block2.BodyInstructions),
+            block2.BranchInstruction);
+
         newBlock.Phis.AddRange(block1.Phis);
 
         Debug.Assert(block2.Phis.Count() == 0);

@@ -5,31 +5,29 @@ namespace Rollomatic.IlMacroB.FrontEnd;
 [DebuggerDisplay("Block_{Id}")]
 public class TacInstructionBlock : IAdjacencyVertex<TacInstructionBlock>
 {
-    private readonly List<TacInstructionBlock> _successors;
-    private readonly List<TacInstructionBlock> _predecessors;
+    private readonly List<TacInstructionBlock> _successors = new();
+    private readonly List<TacInstructionBlock> _predecessors = new();
 
     public TacInstructionBlock(
-        BasicBlock basicBlock,
+        int id,
+        int entryOffset,
+        bool isEntry,
         IEnumerable<TacInstruction> bodyInstructions,
         TacInstruction? branchInstruction)
     {
-        BasicBlock = basicBlock ?? throw new ArgumentNullException(nameof(basicBlock));
-        EntryOffset = BasicBlock.Instructions.First().Offset;
+        Id = id;
+        EntryOffset = entryOffset;
+        IsEntry = isEntry;
 
         BodyInstructions = bodyInstructions?.ToList() ?? throw new ArgumentNullException(nameof(bodyInstructions));
         BranchInstruction = branchInstruction;
-
-        _successors = new List<TacInstructionBlock>();
-        _predecessors = new List<TacInstructionBlock>();
     }
 
-    public int Id => BasicBlock.Id;
+    public int Id { get; }
 
     public int EntryOffset { get; }
 
-    public bool IsEntry => BasicBlock.IsInitial;
-
-    public BasicBlock BasicBlock { get; }
+    public bool IsEntry { get; }
 
     public List<TacInstruction> Phis { get; } = new();
 

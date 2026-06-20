@@ -11,4 +11,9 @@
     <PackageReference Include="Hilke.DataStructures.UnionFind" Version="0.1.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\IlMacro.Graph\IlMacro.Graph.csproj" />
+    <ProjectReference Include="..\IlMacroB.ProgramAnalysis\IlMacroB.ProgramAnalysis.csproj" />
+  </ItemGroup>
+
 </Project>
