@@ -21,6 +21,16 @@ public class TacInstructionBlock : IAdjacencyVertex<TacInstructionBlock>
 
         BodyInstructions = bodyInstructions?.ToList() ?? throw new ArgumentNullException(nameof(bodyInstructions));
         BranchInstruction = branchInstruction;
+
+        if (BodyInstructions.Last().Op.IsControlFlow())
+        {
+            throw new ArgumentException("The last instruction should not be control flow");
+        }
+
+        if (branchInstruction is TacInstruction instr && !instr.Op.IsControlFlow())
+        {
+            throw new ArgumentException("The branch instruction should be control flow");
+        }
     }
 
     public int Id { get; }
@@ -45,9 +55,9 @@ public class TacInstructionBlock : IAdjacencyVertex<TacInstructionBlock>
 
     public IReadOnlyList<TacInstructionBlock> Predecessors => _predecessors;
 
-    public void RemoveInstruction(TacInstruction usesDefinition)
+    public void RemoveInstruction(TacInstruction instruction)
     {
-        if (!((List<TacInstruction>)BodyInstructions).Remove(usesDefinition) && !Phis.Remove(usesDefinition))
+        if (!((List<TacInstruction>)BodyInstructions).Remove(instruction) && !Phis.Remove(instruction))
         {
             //throw new InvalidOperationException("Cannot remove instruction: not found");
         }

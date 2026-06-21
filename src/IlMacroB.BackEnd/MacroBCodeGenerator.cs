@@ -183,7 +183,7 @@ public class MacroBCodeGenerator
                     break;
 
                 default:
-                    throw new NotSupportedException();
+                    throw new NotSupportedException($"{instruction.Op}");
             }
         }
 

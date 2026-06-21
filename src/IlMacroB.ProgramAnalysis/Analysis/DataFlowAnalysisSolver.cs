@@ -21,7 +21,7 @@ public sealed class DataFlowAnalysisSolver<TState, TVertex>
         _equalityComparer = equalityComparer ?? EqualityComparer<TState>.Default;
     }
 
-    public IDictionary<TVertex, TState> SolveBackwardFlow(IGraph<TVertex> graph)
+    public Dictionary<TVertex, TState> SolveBackwardFlow(IGraph<TVertex> graph)
     {
         var outStates = graph.Vertices.ToDictionary(vertex => vertex, vertex => _initializerDelegate(vertex));
 

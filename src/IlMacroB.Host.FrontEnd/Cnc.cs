@@ -2,6 +2,76 @@
 
 public static class Cnc
 {
+    /// <summary>Characteristics of the runtime environment.</summary>
+    /// <remarks>
+    ///   Source: FANUC Series 30i/300i/300is-MODEL A Series 31i/310i/310is-MODEL A Series 32i/320i/320is-MODEL A User's Manual, ref: B-63944EN/03
+    /// </remarks>
+    public static class RuntimeEnvironment
+    {
+        public const int MaxCallDepth = 15;
+        public const int MaxMacroCallDepth = 5;
+        public const int MaxSubprogramCallDepth = 10;
+
+        public static readonly Dictionary<char, int> ArgumentSpecificationI = new()
+        {
+            {'A', 1},
+            {'B', 2},
+            {'C', 3},
+            {'I', 4},
+            {'J', 5},
+            {'K', 6},
+            {'D', 7},
+            {'E', 8},
+            {'F', 9},
+            {'H', 11},
+            {'M', 13},
+            {'Q', 17},
+            {'R', 18},
+            {'S', 19},
+            {'T', 20},
+            {'U', 21},
+            {'V', 22},
+            {'W', 23},
+            {'X', 24},
+            {'Y', 25},
+            {'Z', 26},
+        };
+
+        public static readonly MacroVariableRange LocalVariableRange = new MacroVariableRange(1, 33);
+
+        public static readonly IReadOnlyList<MacroVariableRange> CommonVariableRanges =
+            new List<MacroVariableRange>()
+            {
+                new MacroVariableRange(100, 199),
+                new MacroVariableRange(500, 999)
+            };
+
+        public sealed class MacroVariableRange
+        {
+            public MacroVariableRange(int lowerBound, int upperBound)
+            {
+                if (lowerBound < 0)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(lowerBound), lowerBound, "");
+                }
+
+                if (upperBound < 0)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(upperBound), upperBound, "");
+                }
+
+                LowerBound = lowerBound;
+                UpperBound = upperBound;
+            }
+
+            /// <summary>The inclusive lower bound of the range.</summary>
+            public int LowerBound { get; }
+
+            /// <summary>The inclusize upper bound of the range.</summary>
+            public int UpperBound { get; }
+        }
+    }
+
     public interface IDevice
     {
         void Dispatch(Action action);

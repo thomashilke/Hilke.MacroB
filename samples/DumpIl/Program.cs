@@ -4,16 +4,6 @@ using Rollomatic.IlMacroB.FrontEnd;
 
 namespace Rollomatic.IlMacroB.Samples.DumpIl;
 
-// ToDo: 1. Merge consecutive control flow blocks
-//       2. Rebuild mathematical expressions
-//       4. Detect and reconstruct IF-block (Strong Connected Components?)
-//       6. Implement all mathematical operators,
-//       8. Logging?
-//       9. Debugging?
-//       10. Synchronous communication chanel
-//       11. Read/Write ordering?
-//       12. Simulation/Unit testing?
-
 public class Program
 {
     public unsafe void IterateSomeArray()

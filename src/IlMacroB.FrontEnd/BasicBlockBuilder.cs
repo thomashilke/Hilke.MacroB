@@ -35,7 +35,8 @@ public class BasicBlockBuilder
         var lastIsBranch =
             lastInstruction.OpCode.FlowControl == FlowControl.Branch
          || lastInstruction.OpCode.FlowControl == FlowControl.Return
-         || lastInstruction.OpCode.FlowControl == FlowControl.Throw;
+         || lastInstruction.OpCode.FlowControl == FlowControl.Throw
+         || lastInstruction.OpCode.FlowControl == FlowControl.Cond_Branch;
 
         if (lastIsBranch)
         {

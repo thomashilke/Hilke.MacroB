@@ -1,0 +1,17 @@
+* ToDo:
+1. Rebuild mathematical expressions
+   - Use dataflow to build the input and output stacks before tac construction
+   - Use dataflow to propagate constants
+   - Use in each block, use variable uses to build complex expressions,
+   - Serialize complex expressions putting brackets where necessary.
+2. Detect and reconstruct IF-block,
+3. Build a compiler infrastructures with configurable passes
+4. Detect and reconstruct WHILE loops (Strong Connected Components?)
+5. Implement function calls as subprograms (G65, M98, M198)
+6. Logging?
+7. Debugging? Idea: we can use the PDB to source-map from the ISO to the C# code,
+   and use some help from the PMC to implement breakpoints.
+8. Synchronous communication chanel (G300? G1300? G1310?)
+9. Read/Write ordering? Memory fence?
+10. Simulation/Unit testing?
+

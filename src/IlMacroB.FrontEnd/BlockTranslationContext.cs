@@ -2,7 +2,7 @@ namespace Rollomatic.IlMacroB.FrontEnd;
 
 public class BlockTranslationContext
 {
-    public List<string>? IncomingStack { get; internal set; }
+    public List<OperandBase>? IncomingStack { get; internal set; }
 
-    public List<string>? OutgoingStack { get; internal set; }
+    public List<OperandBase>? OutgoingStack { get; internal set; }
 }
