@@ -55,7 +55,7 @@ public static class TacConverter
             block => ConvertBlockToTac(
                 block,
                 context[block].IncomingStack,
-                out var outgoingStack));
+                out var _));
 
         var blockMap = tacBlocks.ToDictionary(b => b.Value, b => b.Key);
 

@@ -53,7 +53,8 @@ public sealed class DataFlowAnalysisSolver<TState, TVertex>
         while (workList.Any())
         {
             var currentVertex = workList.Pop();
-            var outState = _mergeDelegate(graph.GetPredecessors(currentVertex).Select(predecessor => inStates[predecessor])); var inState = _transferDelegate(currentVertex, outState);
+            var outState = _mergeDelegate(graph.GetPredecessors(currentVertex).Select(predecessor => inStates[predecessor]));
+            var inState = _transferDelegate(currentVertex, outState);
             if (_equalityComparer.Equals(inStates[currentVertex], inState))
             {
                 inStates[currentVertex] = inState;

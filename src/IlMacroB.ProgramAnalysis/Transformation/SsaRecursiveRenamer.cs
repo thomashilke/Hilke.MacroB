@@ -21,8 +21,8 @@ public static class ReadOnlyListExtensions
 
 public class SingleStaticAssignmentRecursiveRenamer
 {
-    private Dictionary<string, int> _counter;
-    private Dictionary<string, Stack<int>> _stack;
+    private Dictionary<string, int>? _counter;
+    private Dictionary<string, Stack<int>>? _stack;
 
     public void Rename(
         TacInstructionBlock entry,

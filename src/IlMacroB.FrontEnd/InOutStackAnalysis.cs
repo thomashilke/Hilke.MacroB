@@ -31,7 +31,7 @@ public class InOutStackAnalysis
             return stacks.Single();
         }
 
-        return new();
+        return new(new List<OperandBase>());
     }
 
     private static InStack InitializeDelegate(BasicBlock block)
