@@ -1,21 +1,6 @@
 ﻿using IlMacroB.Host.FrontEnd;
 
-using Rollomatic.IlMacroB.FrontEnd;
-
-namespace Rollomatic.IlMacroB.Demo;
-
-// ToDo: 1. Merge consecutive control flow blocks
-//       2. Rebuild mathematical expressions
-//       3. Whole program code generation (fallthrough simplification, etc, see 1.)
-//       4. Detect and reconstruct IF-block
-//       5. Initialize the procedure arguments
-//       6. Implement all mathematical operators,
-//       7. Sketch an interface to the CNC
-//       8. Logging?
-//       9. Debugging?
-//       10. Synchronous communication chanel
-//       11. Read/Write ordering?
-//       12. Simulation/Unit testing?
+namespace Demo;
 
 public class Program
 {
@@ -43,9 +28,10 @@ public class Program
 
     public static int Main(string[] args)
     {
-        var device = new ConsoleDumpDevice();
-
+        var device = new StringDevice();
+        
         device.Dispatch(IsoProgramDemo, 1, 3);
+        Console.WriteLine(device.Code);
 
         return 0;
     }

@@ -1,6 +1,4 @@
-﻿
-
-namespace IlMacroB.ProgramAnalysis.Tests;
+﻿namespace IlMacroB.ProgramAnalysis.Tests;
 
 public class Tests
 {

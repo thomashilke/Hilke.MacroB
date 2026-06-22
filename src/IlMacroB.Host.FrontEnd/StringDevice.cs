@@ -4,7 +4,7 @@ using Rollomatic.IlMacroB.FrontEnd;
 
 namespace IlMacroB.Host.FrontEnd;
 
-public sealed class ConsoleDumpDevice : Cnc.IDevice
+public sealed class StringDevice : Cnc.IDevice
 {
     private MacroBCodeGenerator BuildCodeGenerator(MethodInfo method)
     {
@@ -34,8 +34,10 @@ public sealed class ConsoleDumpDevice : Cnc.IDevice
         }
 
         var codeGenerator = BuildCodeGenerator(action.Method);
-        Console.WriteLine(codeGenerator.GenerateCode());
+        Code = codeGenerator.GenerateCode();
     }
+
+    public string Code { get; private set; } = String.Empty;
 
     public void Dispatch<T1>(Action<T1> action, T1 arg1)
     {
@@ -45,7 +47,7 @@ public sealed class ConsoleDumpDevice : Cnc.IDevice
         }
 
         var codeGenerator = BuildCodeGenerator(action.Method);
-        Console.WriteLine(codeGenerator.GenerateCode(arg1));
+        Code = codeGenerator.GenerateCode(arg1);
     }
 
     public void Dispatch<T1, T2>(Action<T1, T2> action, T1 arg1, T2 arg2)
@@ -56,7 +58,7 @@ public sealed class ConsoleDumpDevice : Cnc.IDevice
         }
 
         var codeGenerator = BuildCodeGenerator(action.Method);
-        Console.WriteLine(codeGenerator.GenerateCode(arg1, arg2));
+        Code = codeGenerator.GenerateCode(arg1, arg2);
     }
 
     public void Dispatch<T1, T2, T3>(Action<T1, T2, T3> action, T1 arg1, T2 arg2, T3 arg3)
@@ -67,6 +69,6 @@ public sealed class ConsoleDumpDevice : Cnc.IDevice
         }
 
         var codeGenerator = BuildCodeGenerator(action.Method);
-        Console.WriteLine(codeGenerator.GenerateCode(arg1, arg2, arg3));
+        Code = codeGenerator.GenerateCode(arg1, arg2, arg3);
     }
 }
