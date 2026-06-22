@@ -1,8 +1,6 @@
 ﻿using DiffEngine;
 using IlMacroB.Host.FrontEnd;
 
-namespace IlMacroB.ProgramAnalysis.Tests;
-
 public class StringDeviceTests
 {
     [SetUp]

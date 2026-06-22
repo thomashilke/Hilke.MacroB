@@ -11,6 +11,7 @@
     <Project Path="src/IlMacroB.ProgramAnalysis/IlMacroB.ProgramAnalysis.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/IlMacroB.Host.FrontEnd.Tests/IlMacroB.Host.FrontEnd.Tests.csproj" />
     <Project Path="tests/IlMacroB.ProgramAnalysis.Tests/IlMacroB.ProgramAnalysis.Tests.csproj" />
   </Folder>
 </Solution>

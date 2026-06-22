@@ -31,7 +31,9 @@ public class TacInstruction
                 return $"{Destination} = {Arguments.Single()}";
 
             case Operand.Ret:
-                return $"Return {Arguments.Single()}";
+                return Arguments.Any()  
+                           ? $"Return {Arguments.Single()}"
+                           : $"Return";
             case Operand.Br:
 
                 return $"Goto {Arguments.Single()}";
