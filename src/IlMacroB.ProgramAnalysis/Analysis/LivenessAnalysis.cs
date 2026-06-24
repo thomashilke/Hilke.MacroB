@@ -1,63 +1,5 @@
 namespace Rollomatic.IlMacroB.FrontEnd;
 
-public class LivenessRangeInterferenceAnalysis
-{
-    private LivenessRangeInterferenceAnalysis(UndirectedGraph<SsaVariable> livenessRangeInterferencesGraph)
-    {
-        LivenessRangeInterferencesGraph = livenessRangeInterferencesGraph
-                                       ?? throw new ArgumentNullException(nameof(livenessRangeInterferencesGraph));
-    }
-
-    public UndirectedGraph<SsaVariable> LivenessRangeInterferencesGraph { get; }
-
-    public static LivenessRangeInterferenceAnalysis Analyse(ControlFlowGraph<TacInstructionBlock> controlFlowGraph)
-    {
-        var livenessAnalysis = LivenessAnalysis.Analyse(controlFlowGraph);
-        var livenessRangeAnalysis = LivenessRangeAnalysis.Analyse(controlFlowGraph);
-
-        var ranges = livenessRangeAnalysis.Ranges;
-        var livenessRangeInterferencesGraph = new UndirectedGraph<SsaVariable>(ranges.GetRepresentants());
-
-        // All the arguments version 0 must share distinct registers in the entry block.
-        var argumentBaseNames = livenessRangeAnalysis.Variables.Select(variable => variable.Name).Distinct().ToList();
-        for (var i = 0; i < argumentBaseNames.Count - 1; ++i)
-        {
-            for (var j = i + 1; j < argumentBaseNames.Count; ++j)
-            {
-                var arg1 = new SsaVariable(argumentBaseNames[i]);
-                var arg2 = new SsaVariable(argumentBaseNames[j]);
-
-                livenessRangeInterferencesGraph.AddEdge(
-                    ranges.Find(arg1), 
-                    ranges.Find(arg2));
-            }
-        }
-
-        foreach (var block in controlFlowGraph.Blocks)
-        {
-            var liveNow = livenessAnalysis.LiveOut[block].ToHashSet();
-            foreach (var instruction in block.Instructions.Reverse())
-            {
-                if (instruction.Destination is not null
-                 && instruction.Op != Operand.Assign
-                 && instruction.Op != Operand.Phi)
-                {
-                    var destRange = ranges.Find(instruction.Destination);
-                    foreach (var liveRange in liveNow.Select(ranges.Find).Distinct())
-                    {
-                        livenessRangeInterferencesGraph.AddEdge(destRange, liveRange);
-                    }
-
-                    liveNow.Remove(instruction.Destination);
-                    liveNow.UnionWith(instruction.Arguments.OfType<SsaVariable>());
-                }
-            }
-        }
-
-        return new LivenessRangeInterferenceAnalysis(livenessRangeInterferencesGraph);
-    }
-}
-
 public class LivenessAnalysis
 {
     public LivenessAnalysis(
@@ -88,40 +30,45 @@ public class LivenessAnalysis
     {
         var variables = controlFlowGraph.GetVariables().ToHashSet();
         var blockInfo = controlFlowGraph.Blocks.ToDictionary(block => block, block => GetBlockInfo(block, variables));
+        var stateComparer = new HashSetValueComparer<SsaVariable>();
 
-        var liveOut = controlFlowGraph.Blocks.ToDictionary(block => block, _ => new HashSet<SsaVariable>());
+        var solver = new DataFlowAnalysisSolver<HashSet<SsaVariable>, TacInstructionBlock>(
+            initializerDelegate: EmptySet,
+            transferDelegate: LiveIn,
+            mergeDelegate: Union,
+            stateComparer);
 
-        var didChange = true;
-
-        while (didChange)
-        {
-            didChange = false;
-            foreach (var block in controlFlowGraph.Blocks)
-            {
-                var newLiveOut = new HashSet<SsaVariable>();
-                foreach (var successor in block.Successors)
-                {
-                    newLiveOut.UnionWith(LiveIn(successor));
-                }
-
-                if (!newLiveOut.SetEquals(liveOut[block]))
-                {
-                    didChange = true;
-                    liveOut[block] = newLiveOut;
-                }
-            }
-        }
+        var liveOut = solver.SolveBackwardFlow(controlFlowGraph);
 
         return new LivenessAnalysis(
-            variables: variables,
-            ueVar: blockInfo.ToDictionary(b => b.Key, b => b.Value.UeVar),
-            varNotKilled: blockInfo.ToDictionary(b => b.Key, b => b.Value.VarNotKilled),
-            liveOut: liveOut,
-            liveIn: controlFlowGraph.Blocks.ToDictionary(block => block, block => LiveIn(block).ToHashSet()));
+            variables,
+            blockInfo.ToDictionary(p => p.Key, p => p.Value.UeVar),
+            blockInfo.ToDictionary(p => p.Key, p => p.Value.VarNotKilled),
+            liveOut,
+            liveOut.ToDictionary(p => p.Key, p => LiveIn(p.Key, p.Value)));
 
-        IEnumerable<SsaVariable> LiveIn(TacInstructionBlock successor)
+        // LiveIn variables of a block are either:
+        //  - Upwards exposed variables (variables used before being defined in this block),
+        //  - LiveOut variable that are not killed (defined) by this block.
+        HashSet<SsaVariable> LiveIn(TacInstructionBlock block, HashSet<SsaVariable> liveOut)
         {
-            return blockInfo[successor].UeVar.Concat(liveOut[successor].Intersect(blockInfo[successor].VarNotKilled));
+            return blockInfo[block].UeVar.Union(liveOut.Intersect(blockInfo[block].VarNotKilled)).ToHashSet();
+        }
+
+        HashSet<SsaVariable> Union(IEnumerable<HashSet<SsaVariable>> inStates)
+        {
+            return inStates.Aggregate(
+                new HashSet<SsaVariable>(),
+                (aggregate, next) =>
+                {
+                    aggregate.UnionWith(next);
+                    return aggregate;
+                });
+        }
+
+        HashSet<SsaVariable> EmptySet(TacInstructionBlock block)
+        {
+            return new HashSet<SsaVariable>();
         }
     }
 
@@ -131,12 +78,12 @@ public class LivenessAnalysis
     {
         var ueVar = new HashSet<SsaVariable>(
             block.Phis.SelectMany(instruction => instruction.Arguments).OfType<SsaVariable>());
-        var killVar = new HashSet<SsaVariable>(block.Phis.Select(instruction => instruction.Destination));
+        var killVar = new HashSet<SsaVariable>(block.Phis.Select(instruction => instruction.Destination!));
 
         foreach (var instruction in block.Instructions.Where(instruction => instruction.Op != Operand.Phi))
         {
             ueVar.UnionWith(instruction.Arguments.OfType<SsaVariable>().Where(variable => !killVar.Contains(variable)));
-            if (instruction.Destination is SsaVariable destination)
+            if (instruction.Destination is { } destination)
             {
                 killVar.Add(destination);
             }
