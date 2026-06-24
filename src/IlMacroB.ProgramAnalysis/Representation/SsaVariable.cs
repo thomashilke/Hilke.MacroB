@@ -1,5 +1,23 @@
 namespace Rollomatic.IlMacroB.FrontEnd;
 
+public class CompositeExpression : OperandBase
+{
+
+}
+
+public class CompositeUnaryExpression : CompositeExpression
+{
+
+}
+
+public class CompositeBinaryExpression : CompositeExpression
+{
+    public CompositeBinaryExpression(CompositeExpression left, Operand operand, CompositeExpression right)
+    {
+
+    }
+}
+
 public class SsaVariable : OperandBase, IEquatable<SsaVariable>
 {
     public SsaVariable(string name)

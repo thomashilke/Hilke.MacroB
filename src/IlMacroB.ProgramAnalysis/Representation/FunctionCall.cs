@@ -1,11 +1,12 @@
 using System.Diagnostics;
+using System.Reflection;
 
 namespace Rollomatic.IlMacroB.FrontEnd;
 
-[DebuggerDisplay("Call({FunctionName})")]
-public sealed class FunctionCall : OperandBase
+[DebuggerDisplay("IntrinsicCall({FunctionName})")]
+public sealed class IntrinsicFunctionCall : OperandBase
 {
-    public FunctionCall(string functionName, bool isPure)
+    public IntrinsicFunctionCall(string functionName, bool isPure)
     {
         FunctionName = functionName;
         IsPure = isPure;
@@ -18,5 +19,21 @@ public sealed class FunctionCall : OperandBase
     public override string ToString()
     {
         return FunctionName;
+    }
+}
+
+[DebuggerDisplay("Call({FunctionName})")]
+public sealed class FunctionCall : OperandBase
+{
+    public MethodInfo Method { get; }
+
+    public FunctionCall(MethodInfo method)
+    {
+        Method = method;
+    }
+
+    public override string ToString()
+    {
+        return Method.ToString();
     }
 }

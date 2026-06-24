@@ -293,7 +293,7 @@ public static class TacConverter
                 tacInstruction =
                     new TacInstruction(
                         Operand.Call,
-                        arguments.Prepend(new FunctionCall(callTarget, false)).ToArray());
+                        arguments.Prepend(new IntrinsicFunctionCall(callTarget, false)).ToArray());
 
                 return true;
             }
@@ -312,7 +312,7 @@ public static class TacConverter
                         new TacInstruction(
                             tempRegister,
                             Operand.Call,
-                            arguments.Prepend(new FunctionCall(callTarget, false)).ToArray());
+                            arguments.Prepend(new IntrinsicFunctionCall(callTarget, false)).ToArray());
                 }
 
                 return true;

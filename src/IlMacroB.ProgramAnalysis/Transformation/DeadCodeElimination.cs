@@ -84,7 +84,7 @@ public class DeadCodeEliminationTransform : IControlFlowGraphTransformation<TacI
             }
             else
             {
-                if (uses.Definition.Arguments.First() is FunctionCall functionCall)
+                if (uses.Definition.Arguments.First() is IntrinsicFunctionCall functionCall)
                 {
                     if (functionCall.IsPure)
                     {
