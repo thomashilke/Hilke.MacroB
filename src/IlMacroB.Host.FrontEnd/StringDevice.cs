@@ -15,6 +15,9 @@ public sealed class StringDevice : Cnc.IDevice
         var renameTransform = new StaticSingleAssignmentRenameTransform();
         tacControlFlowGraph = renameTransform.Transform(tacControlFlowGraph);
 
+        var constantFoldingTransform = new ConstantPropagatorTransform();
+        tacControlFlowGraph = constantFoldingTransform.Transform(tacControlFlowGraph);
+
         var dceTransform = new DeadCodeEliminationTransform();
         tacControlFlowGraph = dceTransform.Transform(tacControlFlowGraph);
 

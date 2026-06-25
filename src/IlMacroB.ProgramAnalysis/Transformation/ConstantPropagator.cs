@@ -1,9 +1,3 @@
-using System.Runtime.ConstrainedExecution;
-using System.Runtime.Intrinsics.Arm;
-
-using static System.Net.WebRequestMethods;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-
 namespace Rollomatic.IlMacroB.FrontEnd;
 
 public class ConstantPropagatorTransform : IControlFlowGraphTransformation<TacInstructionBlock>
@@ -17,18 +11,20 @@ public class ConstantPropagatorTransform : IControlFlowGraphTransformation<TacIn
         {
             foreach (var instruction in block.Instructions)
             {
-                instructions.Add(instruction); ;
+                instructions.Add(instruction);
+                ;
                 foreach (var vars in instruction.Arguments
-                    .Index()
-                    .Where(p => p.Item is SsaVariable)
-                    .Select(p => (p.Index, p.Item as SsaVariable)))
+                                                .Index()
+                                                .Where(p => p.Item is SsaVariable)
+                                                .Select(p => (p.Index, p.Item as SsaVariable)))
                 {
                     variableUses[vars.Item2].AddUse(vars.Index, instruction);
                 }
             }
         }
 
-        var worklist = new Stack<TacInstruction>(instructions.Where(instruction => instruction.Arguments.All(argument => argument is Constant)));
+        var worklist = new Stack<TacInstruction>(
+            instructions.Where(instruction => instruction.Arguments.All(argument => argument is Constant)));
         var substitutions = new Dictionary<SsaVariable, Constant>();
 
         while (worklist.Count > 0)
@@ -36,15 +32,17 @@ public class ConstantPropagatorTransform : IControlFlowGraphTransformation<TacIn
             var instruction = worklist.Pop();
             if (instruction.Destination is { } destination)
             {
-                Constant substitution = Evaluate(instruction, substitutions);
+                var substitution = Evaluate(instruction, substitutions);
                 substitutions[destination] = substitution;
                 foreach (var use in variableUses[destination].Uses)
                 {
-
-                    use.Instruction.Arguments[use.ArgumentIndex] = substitution;
-                    if (use.Instruction.Arguments.All(argument => argument is Constant))
+                    if (use.Instruction.Op != Operand.Phi)
                     {
-                        worklist.Push(use.Instruction);
+                        use.Instruction.Arguments[use.ArgumentIndex] = substitution;
+                        if (use.Instruction.Arguments.All(argument => argument is Constant))
+                        {
+                            worklist.Push(use.Instruction);
+                        }
                     }
                 }
             }
@@ -56,13 +54,15 @@ public class ConstantPropagatorTransform : IControlFlowGraphTransformation<TacIn
     private Constant Evaluate(TacInstruction instruction, Dictionary<SsaVariable, Constant> substitutions)
     {
         var constantArguments = instruction.Arguments.Select(argument =>
-        {
-            return argument switch
-            {
-                SsaVariable variable => substitutions[variable],
-                Constant constant => constant
-            };
-        }).Select(c => double.Parse(c.Value)).ToList();
+                                           {
+                                               return argument switch
+                                               {
+                                                   SsaVariable variable => substitutions[variable],
+                                                   Constant constant => constant
+                                               };
+                                           })
+                                           .Select(c => double.Parse(c.Value))
+                                           .ToList();
 
         var result = instruction.Op switch
         {
@@ -81,22 +81,24 @@ public class ConstantPropagatorTransform : IControlFlowGraphTransformation<TacIn
             Operand.Fix => Math.Ceiling(constantArguments.First()),
             Operand.Fup => Math.Floor(constantArguments.First()),
             Operand.Ln => Math.Log(constantArguments.First()),
-            Operand.Exp => Math.Exp,
-            Operand.Pow => Math.Pow(),
-            Operand.Adp => ,
-            Operand.Add => ,
-            Operand.Sub => ,
-            Operand.Mul => ,
-            Operand.Div => ,
-            Operand.Rem => ,
-            Operand.Or => ,
-            Operand.XOr => ,
-            Operand.And => ,
-            Operand.Not => ,
-            Operand.Neg => ,
-            Operand.Ceq => ,
-            Operand.Clt => ,
-            Operand.Cgt => ,
-        }
+            Operand.Exp => Math.Exp(constantArguments.First()),
+            Operand.Pow => Math.Pow(constantArguments.First(), constantArguments.Last()),
+            Operand.Adp => throw new NotSupportedException(),
+            Operand.Add => constantArguments.First() + constantArguments.Last(),
+            Operand.Sub => constantArguments.First() - constantArguments.Last(),
+            Operand.Mul => constantArguments.First() * constantArguments.Last(),
+            Operand.Div => constantArguments.First() / constantArguments.Last(),
+            Operand.Rem => throw new NotSupportedException(),
+            Operand.Or => constantArguments.First() != 0.0 || constantArguments.Last() != 0.0 ? 1.0 : 0.0,
+            Operand.XOr => (constantArguments.First() != 0.0) ^ (constantArguments.Last() != 0.0) ? 1.0 : 0.0,
+            Operand.And => constantArguments.First() != 0.0 && constantArguments.Last() != 0.0 ? 1.0 : 0.0,
+            Operand.Not => !(constantArguments.First() != 0.0) ? 1.0 : 0.0,
+            Operand.Neg => -constantArguments.First(),
+            Operand.Ceq => constantArguments.First() == constantArguments.Last() ? 1.0 : 0.0,
+            Operand.Clt => constantArguments.First() < constantArguments.Last() ? 1.0 : 0.0,
+            Operand.Cgt => constantArguments.First() > constantArguments.Last() ? 1.0 : 0.0
+        };
+
+        return new Constant(result.ToString());
     }
 }

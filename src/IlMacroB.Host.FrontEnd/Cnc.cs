@@ -90,8 +90,8 @@ public static class Cnc
     public static class Machine
     {
         public static void Move(
-            double feed,
-            double x, double y, double z
+            double x, double y, double z,
+            double feed
             /*double? x = null, double? y = null, double? z = null,
               double? a = null, double? b = null, double? c = null*/) =>
             ThrowSupportedOnlyOnCnc();
@@ -110,7 +110,6 @@ public static class Cnc
         {
             public static double Clock1 => throw new NotSupportedException();
             public static double Clock2 => throw new NotSupportedException();
-
         }
     }
 

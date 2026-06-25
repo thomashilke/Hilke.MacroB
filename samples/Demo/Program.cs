@@ -6,23 +6,28 @@ public class Program
 {
     public static void IsoProgramDemo(int a, int b)
     {
+        var dAlpha = Cnc.Math.Sin(Math.PI / 3.0);
         if (a > 5)
         {
             a -= 5;
         }
 
-        for (var i = 0; i < 3; ++i)
+        a *= 2;
+
+        Cnc.Machine.StartCoolant();
+
+        var position = 0.0;
+        for (var i = 1; i < 3; ++i)
         {
-            a += i;
+            Cnc.Machine.Move(
+                feed: 500.0,
+                x: Cnc.Math.Sin(a + b),
+                y: position,
+                z: 34.0);
+
+            position += dAlpha;
         }
 
-        a *= 2;
-        Cnc.Machine.StartCoolant();
-        Cnc.Machine.Move(
-            feed: 500.0,
-            x: Cnc.Math.Sin(a + b),
-            y: 2.0,
-            z: 34.0);
         Cnc.Machine.StopCoolant();
     }
 

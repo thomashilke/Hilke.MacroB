@@ -12,6 +12,8 @@ public class JumpTarget : OperandBase, IEquatable<JumpTarget>
 
     public int Target { get; }
 
+    public override string ToString() => $"Block_at_{Target}";
+
     /// <inheritdoc />
     public bool Equals(JumpTarget? other)
     {

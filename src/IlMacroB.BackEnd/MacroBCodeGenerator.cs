@@ -55,18 +55,18 @@ public class MacroBCodeGenerator
     {
         var binaryOperatorMap = new Dictionary<Operand, string>
         {
-            { Operand.Add, "+" },
-            { Operand.Sub, "-" },
-            { Operand.Mul, "*" },
-            { Operand.Div, "/" },
-            { Operand.Cgt, ">" },
-            { Operand.Clt, "<" },
-            { Operand.Ble, "LE" },
-            { Operand.Blt, "LT" },
-            { Operand.Bge, "GE" },
-            { Operand.Bgt, "GT" },
-            { Operand.Beq, "EQ" },
-            { Operand.Bne, "NE" }
+            { Operand.Add, " + " },
+            { Operand.Sub, " - " },
+            { Operand.Mul, " * " },
+            { Operand.Div, " / " },
+            { Operand.Cgt, " GT " },
+            { Operand.Clt, " LT " },
+            { Operand.Ble, " LE " },
+            { Operand.Blt, " LT " },
+            { Operand.Bge, " GE " },
+            { Operand.Bgt, " GT " },
+            { Operand.Beq, " EQ " },
+            { Operand.Bne, " NE " }
         };
 
         var sb = new StringBuilder();
@@ -282,9 +282,9 @@ public class MacroBCodeGenerator
 
                 case Operand.Br:
                 {
-                    var jumpTarget = branchInstruction.Arguments.ElementAt(0);
-                    if (successorJumpTarget is not JumpTarget successor
-                     || successor == jumpTarget)
+                    var jumpTarget = branchInstruction.Arguments.ElementAt(0) as JumpTarget;
+                    if (!(successorJumpTarget is JumpTarget successor
+                     && successor == jumpTarget))
                     {
                         sb.AppendLine($"GOTO {RenderJumpTarget(branchInstruction.Arguments.Single())}");
                     }
@@ -339,10 +339,10 @@ public class MacroBCodeGenerator
 
         Debug.Assert(callInstruction.Op == Operand.Call);
 
-        if (callInstruction.Arguments.First() is FunctionCall functionCall)
+        if (callInstruction.Arguments.First() is IntrinsicFunctionCall intrinsicFunctionCall)
         {
             return
-                $"{functionNameMap[functionCall.FunctionName].Render(callInstruction.Arguments.Skip(1).Select(arg => RenderOperand(arg)))}";
+                $"{functionNameMap[intrinsicFunctionCall.FunctionName].Render(callInstruction.Arguments.Skip(1).Select(arg => RenderOperand(arg)))}";
         }
 
         throw new InvalidOperationException();

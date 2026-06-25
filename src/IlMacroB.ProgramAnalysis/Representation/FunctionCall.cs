@@ -32,6 +32,8 @@ public sealed class FunctionCall : OperandBase
         Method = method;
     }
 
+    public string FunctionName => Method.ToString();
+
     public override string ToString()
     {
         return Method.ToString();

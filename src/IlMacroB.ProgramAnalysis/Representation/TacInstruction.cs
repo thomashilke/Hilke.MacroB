@@ -69,6 +69,7 @@ public class TacInstruction
             case Operand.Mul:
             case Operand.Div:
             case Operand.Cgt:
+            case Operand.Clt:
                 return $"{Destination} = {Arguments[0]} {Op} {Arguments[1]}";
             default:
                 throw new NotSupportedException();
