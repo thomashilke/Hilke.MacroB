@@ -1,8 +1,8 @@
-﻿# IlMacroB
+﻿# MacroB
 
 A C# to Fanuc Macro B (ISO G-code) compiler for CNC machines. 
 
-IlMacroB parses .NET Common Intermediate Language (CIL/IL) and translates it into Fanuc Macro B code, utilizing standard compiler techniques to generate reasonable and safer result than what would be typically written by hand.
+MacroB parses .NET Common Intermediate Language (CIL/IL) and translates it into Fanuc Macro B code, utilizing standard compiler techniques to generate reasonable and safer result than what would be typically written by hand.
 
 ## Overview
 
@@ -27,8 +27,8 @@ This repository contains a set of libraries and tools to compile C# methods into
 ### Setup
 Clone the repository:
 ```bash
-git clone https://github.com/Rollomatic/IlMacroB.git
-cd IlMacroB
+git clone https://github.com/thomashilke/MacroB.git
+cd MacroB
 ```
 
 Build the solution:

@@ -1,8 +1,8 @@
-﻿using IlMacroB.Host.FrontEnd;
+﻿using MacroB.Host.FrontEnd;
 
-using Rollomatic.IlMacroB.FrontEnd;
+using Hilke.MacroB.FrontEnd;
 
-namespace Rollomatic.IlMacroB.Samples.DumpIl;
+namespace Hilke.MacroB.Samples.DumpIl;
 
 public class Program
 {

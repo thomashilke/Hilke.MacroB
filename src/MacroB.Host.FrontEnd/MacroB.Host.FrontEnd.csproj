@@ -1,15 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\MacroB.FrontEnd\MacroB.FrontEnd.csproj" />
-    <ProjectReference Include="..\..\src\MacroB.Host.FrontEnd\MacroB.Host.FrontEnd.csproj" />
+    <ProjectReference Include="..\MacroB.FrontEnd\MacroB.FrontEnd.csproj" />
+    <ProjectReference Include="..\MacroB.BackEnd\MacroB.BackEnd.csproj" />
   </ItemGroup>
 
 </Project>

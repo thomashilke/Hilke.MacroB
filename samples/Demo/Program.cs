@@ -1,4 +1,4 @@
-﻿using IlMacroB.Host.FrontEnd;
+﻿using MacroB.Host.FrontEnd;
 
 namespace Demo;
 
