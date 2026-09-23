@@ -44,7 +44,7 @@ dotnet run --project samples/Demo/Demo.csproj
 
 ## Roadmap / TODOs
 The following items are planned for future development:
-- [ ] Rebuild complex mathematical expressions (brackets, operator precedence).
+- [X] Rebuild complex mathematical expressions (brackets, operator precedence).
 - [ ] Detect and reconstruct high-level `IF` blocks and `WHILE` loops.
 - [ ] Implement function calls as subprograms (`G65`, `M98`).
 - [ ] Implement whole program optimization (fallthrough simplification).

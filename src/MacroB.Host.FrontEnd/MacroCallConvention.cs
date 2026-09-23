@@ -2,6 +2,7 @@ namespace MacroB.Host.FrontEnd;
 
 public enum MacroCallConvention
 {
+    Inline,
     SubProgramCall,
     MacroCall,
     MacroCallStyle1,

@@ -49,7 +49,11 @@ public class LivenessRangeInterferenceAnalysis
                     }
 
                     liveNow.Remove(instruction.Destination);
-                    liveNow.UnionWith(instruction.Arguments.OfType<SsaVariable>());
+                }
+
+                if (instruction.Op != Operand.Phi)
+                {
+                    liveNow.UnionWith(instruction.Arguments.SelectMany(argument => argument.GetReferencedVariables()));
                 }
             }
         }

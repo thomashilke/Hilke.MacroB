@@ -82,7 +82,9 @@ public class LivenessAnalysis
 
         foreach (var instruction in block.Instructions.Where(instruction => instruction.Op != Operand.Phi))
         {
-            ueVar.UnionWith(instruction.Arguments.OfType<SsaVariable>().Where(variable => !killVar.Contains(variable)));
+            ueVar.UnionWith(
+                instruction.Arguments.SelectMany(argument => argument.GetReferencedVariables())
+                                      .Where(variable => !killVar.Contains(variable)));
             if (instruction.Destination is { } destination)
             {
                 killVar.Add(destination);

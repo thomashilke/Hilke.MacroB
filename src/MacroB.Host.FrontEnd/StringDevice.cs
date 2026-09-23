@@ -24,6 +24,9 @@ public sealed class StringDevice : Cnc.IDevice
         var basicBlockMergeTransform = new BasicBlockMergeTransform();
         tacControlFlowGraph = basicBlockMergeTransform.Transform(tacControlFlowGraph);
 
+        var expressionRebuildTransform = new ExpressionRebuildTransform();
+        tacControlFlowGraph = expressionRebuildTransform.Transform(tacControlFlowGraph);
+
         var codeGenerator = new MacroBCodeGenerator(tacControlFlowGraph);
 
         return codeGenerator;

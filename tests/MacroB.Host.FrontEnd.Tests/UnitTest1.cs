@@ -25,7 +25,7 @@ public class StringDeviceTests
         Cnc.Machine.StartCoolant();
         Cnc.Machine.Move(
             feed: 500.0,
-            x: Cnc.Math.Sin(a + b),
+            x: Cnc.Math.Sin((a + b) * 2),
             y: 2.0,
             z: 34.0);
         Cnc.Machine.StopCoolant();

@@ -15,7 +15,12 @@ public static class ControlFlowGraphExtensions
 
             static IEnumerable<SsaVariable> GetInstructionVariables(TacInstruction instruction)
             {
-                return instruction.Arguments.Prepend(instruction.Destination).OfType<SsaVariable>();
+                var destinationVariable = instruction.Destination is { } destination
+                    ? new[] { destination }
+                    : Enumerable.Empty<SsaVariable>();
+
+                return destinationVariable.Concat(
+                    instruction.Arguments.SelectMany(argument => argument.GetReferencedVariables()));
             }
         }
 

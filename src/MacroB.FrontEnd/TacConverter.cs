@@ -279,7 +279,7 @@ public static class TacConverter
         {
             var methodInfo = instruction.Operand as MethodBase;
             var parameterCount = methodInfo?.GetParameters().Length ?? 0;
-            var arguments = new List<object>();
+            var arguments = new List<OperandBase>();
 
             for (var i = 0; i < parameterCount; ++i)
             {

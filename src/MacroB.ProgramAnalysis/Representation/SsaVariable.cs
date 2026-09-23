@@ -7,11 +7,11 @@ public class CompositeExpression : OperandBase
 
 public class CompositeUnaryExpression : CompositeExpression
 {
-    public CompositeExpression Expression { get; }
+    public OperandBase Expression { get; }
 
     public Operand Operand { get; }
 
-    public CompositeUnaryExpression(CompositeExpression expression, Operand operand)
+    public CompositeUnaryExpression(OperandBase expression, Operand operand)
     {
         Expression = expression;
         Operand = operand;
@@ -21,13 +21,13 @@ public class CompositeUnaryExpression : CompositeExpression
 
 public class CompositeBinaryExpression : CompositeExpression
 {
-    public CompositeExpression Left { get; }
+    public OperandBase Left { get; }
 
     public Operand Operand { get; }
 
-    public CompositeExpression Right { get; }
+    public OperandBase Right { get; }
 
-    public CompositeBinaryExpression(CompositeExpression left, Operand operand, CompositeExpression right)
+    public CompositeBinaryExpression(OperandBase left, Operand operand, OperandBase right)
     {
         Left = left;
         Operand = operand;

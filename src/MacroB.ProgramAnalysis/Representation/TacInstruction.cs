@@ -2,14 +2,14 @@ namespace Hilke.MacroB.FrontEnd;
 
 public class TacInstruction
 {
-    public TacInstruction(string destination, Operand op, params object[] arguments)
+    public TacInstruction(string destination, Operand op, params OperandBase[] arguments)
     {
         Destination = new SsaVariable(destination);
         Op = op;
         Arguments = arguments.ToList();
     }
 
-    public TacInstruction(Operand op, params object[] arguments)
+    public TacInstruction(Operand op, params OperandBase[] arguments)
     {
         Op = op;
         Arguments = arguments.ToList();
@@ -19,7 +19,7 @@ public class TacInstruction
 
     public Operand Op { get; }
 
-    public List<object> Arguments { get; set; }
+    public List<OperandBase> Arguments { get; set; }
 
     public bool IsBranch => Op.IsControlFlow();
 
