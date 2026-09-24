@@ -59,6 +59,15 @@ public static class GraphExtensions
 
         public Dictionary<TVertex, int> GreedyColoring()
         {
+            // A liveness-range interference graph has zero vertices when the compiled unit needs no
+            // general-purpose registers at all (e.g. a trivial `return <constant>;` method has no SSA
+            // variables to color) — graph.Vertices.First() below would otherwise throw on that empty
+            // graph even though "no vertices -> no colors" is the unambiguous correct answer.
+            if (!graph.Vertices.Any())
+            {
+                return new Dictionary<TVertex, int>();
+            }
+
             var coloring = new Dictionary<TVertex, int> { { graph.Vertices.First(), 0 } };
 
             var stack = new Stack<TVertex>(graph.Vertices);

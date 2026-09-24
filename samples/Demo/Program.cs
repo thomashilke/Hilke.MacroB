@@ -1,9 +1,16 @@
 ﻿using MacroB.Host.FrontEnd;
+using Hilke.MacroB.FrontEnd;
 
 namespace Demo;
 
 public class Program
 {
+    [MacroCallConvention(MacroCallConvention.MacroCall)]
+    public static double GetYAxisPosition()
+    {
+        return 17.0;
+    }
+
     public static void IsoProgramDemo(int a, int b)
     {
         var dAlpha = Cnc.Math.Sin(Math.PI / 3.0);
@@ -16,7 +23,7 @@ public class Program
 
         Cnc.Machine.StartCoolant();
 
-        var position = 0.0;
+        var position = GetYAxisPosition();
         for (var i = 1; i < 3; ++i)
         {
             Cnc.Machine.Move(
@@ -34,7 +41,7 @@ public class Program
     public static int Main(string[] args)
     {
         var device = new StringDevice();
-        
+
         device.Dispatch(IsoProgramDemo, 1, 3);
         Console.WriteLine(device.Code);
 

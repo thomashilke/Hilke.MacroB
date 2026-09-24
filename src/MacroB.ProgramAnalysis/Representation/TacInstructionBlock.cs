@@ -22,7 +22,7 @@ public class TacInstructionBlock : IAdjacencyVertex<TacInstructionBlock>
         BodyInstructions = bodyInstructions?.ToList() ?? throw new ArgumentNullException(nameof(bodyInstructions));
         BranchInstruction = branchInstruction;
 
-        if (BodyInstructions.Last().Op.IsControlFlow())
+        if (BodyInstructions.Count > 0 && BodyInstructions[^1].Op.IsControlFlow())
         {
             throw new ArgumentException("The last instruction should not be control flow");
         }
