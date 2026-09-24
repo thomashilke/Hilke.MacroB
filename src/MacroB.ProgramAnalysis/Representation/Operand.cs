@@ -10,6 +10,7 @@ public enum Operand
     ASin,
     ACos,
     ATan,
+    ATan2,
     Sqrt,
 
     Abs,

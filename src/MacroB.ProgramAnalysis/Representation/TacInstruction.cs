@@ -71,6 +71,9 @@ public class TacInstruction
             case Operand.Cgt:
             case Operand.Clt:
                 return $"{Destination} = {Arguments[0]} {Op} {Arguments[1]}";
+            case Operand.Pow:
+            case Operand.ATan2:
+                return $"{Destination} = {Op}({Arguments[0]}, {Arguments[1]})";
             default:
                 throw new NotSupportedException();
         }

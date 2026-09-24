@@ -62,7 +62,11 @@ public class Program
 
         var instructions = IlParser.ParseMethod(method);
         var controlFlowGraph = ControlFlowGraphBuilder.Create(instructions);
-        var tacControlFlowGraph = TacConverter.Convert(controlFlowGraph);
+        var tacControlFlowGraph = TacConverter.Convert(
+            controlFlowGraph,
+            CncMathIntrinsics.Map,
+            new Dictionary<System.Reflection.MethodInfo, int>(),
+            new Dictionary<System.Reflection.MethodInfo, MacroCallConvention>());
 
         var renameTransform = new StaticSingleAssignmentRenameTransform();
         renameTransform.Transform(tacControlFlowGraph);
@@ -114,7 +118,7 @@ public class Program
             }
         }
 
-        var codeGen = new MacroBCodeGenerator(tacControlFlowGraph);
+        var codeGen = new MacroBCodeGenerator(tacControlFlowGraph, MacroVariableConfiguration.Default, CncDeviceIntrinsics.Map, MacroVariableConfiguration.Default.GeneralPurposeRegisterBase);
         Console.WriteLine(codeGen.GenerateCode());
     }
 

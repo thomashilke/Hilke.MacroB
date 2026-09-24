@@ -27,7 +27,12 @@ public class DominatorTree : IGraph<TacInstructionBlock>
             _dominatorTree[dominator].Add(dominated);
         }
 
-        Root = _dominatorTree.Keys.Single(block => !_immediateDominator.ContainsKey(block));
+        // Root must be resolved over every block the immediate-dominator map was computed for
+        // (immediateDominator.Keys), not just _dominatorTree.Keys: a CFG with a single basic block
+        // (no branches) has an empty dominator tree (the entry has no dominated children), so
+        // _dominatorTree.Keys would be empty and Single() would throw even though the entry block
+        // is unambiguously the root.
+        Root = immediateDominator.Keys.Single(block => !_immediateDominator.ContainsKey(block));
 
         Debug.Assert(Root.IsEntry);
     }

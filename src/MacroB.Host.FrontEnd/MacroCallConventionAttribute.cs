@@ -1,8 +1,11 @@
 using System.ComponentModel;
 
+using Hilke.MacroB.FrontEnd;
+
 namespace MacroB.Host.FrontEnd;
 
-public sealed class MacroCallConventionAttribute
+[AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
+public sealed class MacroCallConventionAttribute : Attribute
 {
     public MacroCallConventionAttribute(MacroCallConvention callConvention)
     {

@@ -1,4 +1,4 @@
-namespace MacroB.Host.FrontEnd;
+namespace Hilke.MacroB.FrontEnd;
 
 public enum MacroCallConvention
 {

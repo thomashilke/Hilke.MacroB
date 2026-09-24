@@ -5,7 +5,11 @@ namespace Hilke.MacroB.FrontEnd;
 
 public static class TacConverter
 {
-    public static ControlFlowGraph<TacInstructionBlock> Convert(ControlFlowGraph<BasicBlock> controlFlowGraph)
+    public static ControlFlowGraph<TacInstructionBlock> Convert(
+        ControlFlowGraph<BasicBlock> controlFlowGraph,
+        IReadOnlyDictionary<MethodInfo, Operand> mathIntrinsics,
+        IReadOnlyDictionary<MethodInfo, int> procedureNumbers,
+        IReadOnlyDictionary<MethodInfo, MacroCallConvention> conventions)
     {
         var reversePostOrder = controlFlowGraph
                                .ReversePostOrder(controlFlowGraph.EntryBlock)
@@ -34,7 +38,7 @@ public static class TacConverter
                     }
                 }
 
-                ConvertBlockToTac(block, context[block].IncomingStack, out var newOutgoingStack);
+                ConvertBlockToTac(block, context[block].IncomingStack, mathIntrinsics, procedureNumbers, conventions, out var newOutgoingStack);
 
                 if (context[block].OutgoingStack is null
                  || newOutgoingStack.Count != context[block].OutgoingStack.Count)
@@ -46,7 +50,7 @@ public static class TacConverter
         }
 
         var betterStackComputation = InOutStackAnalysis.Analyse(controlFlowGraph, (block, inStack) => {
-            ConvertBlockToTac(block, inStack.Stack ?? new(), out var outStack);
+            ConvertBlockToTac(block, inStack.Stack ?? new(), mathIntrinsics, procedureNumbers, conventions, out var outStack);
             return new(outStack);
         });
 
@@ -55,6 +59,9 @@ public static class TacConverter
             block => ConvertBlockToTac(
                 block,
                 context[block].IncomingStack,
+                mathIntrinsics,
+                procedureNumbers,
+                conventions,
                 out var _));
 
         var blockMap = tacBlocks.ToDictionary(b => b.Value, b => b.Key);
@@ -71,6 +78,9 @@ public static class TacConverter
     public static TacInstructionBlock ConvertBlockToTac(
         BasicBlock block,
         List<OperandBase> incomingStack,
+        IReadOnlyDictionary<MethodInfo, Operand> mathIntrinsics,
+        IReadOnlyDictionary<MethodInfo, int> procedureNumbers,
+        IReadOnlyDictionary<MethodInfo, MacroCallConvention> conventions,
         out List<OperandBase> outgoingStack)
     {
         var tacInstructions = new List<TacInstruction>();
@@ -79,7 +89,7 @@ public static class TacConverter
 
         foreach (var instruction in block.BodyInstructions)
         {
-            if (HandleInstruction(instruction, ref evaluationStack, ref tempCounter, out var tacInstruction))
+            if (HandleInstruction(instruction, ref evaluationStack, ref tempCounter, mathIntrinsics, procedureNumbers, conventions, out var tacInstruction))
             {
                 tacInstructions.Add(tacInstruction);
             }
@@ -87,7 +97,7 @@ public static class TacConverter
 
         if (block.BranchInstruction is not null)
         {
-            if (HandleInstruction(block.BranchInstruction, ref evaluationStack, ref tempCounter, out var branchInstruction))
+            if (HandleInstruction(block.BranchInstruction, ref evaluationStack, ref tempCounter, mathIntrinsics, procedureNumbers, conventions, out var branchInstruction))
             {
                 outgoingStack = SpillStackVariables(ref tacInstructions, evaluationStack);
 
@@ -111,6 +121,9 @@ public static class TacConverter
         IlInstruction instruction,
         ref Stack<OperandBase> evaluationStack,
         ref int tempCounter,
+        IReadOnlyDictionary<MethodInfo, Operand> mathIntrinsics,
+        IReadOnlyDictionary<MethodInfo, int> procedureNumbers,
+        IReadOnlyDictionary<MethodInfo, MacroCallConvention> conventions,
         out TacInstruction? tacInstruction)
     {
         var opName = instruction.OpCode.Name;
@@ -287,36 +300,32 @@ public static class TacConverter
             }
 
             var callTarget = methodInfo?.Name ?? "DynamicCall";
+            var isVoid = opName.Contains("void") || (methodInfo is MethodInfo voidCheckMi && voidCheckMi.ReturnType == typeof(void));
 
-            if (opName.Contains("void") || (methodInfo is MethodInfo mi && mi.ReturnType == typeof(void)))
+            OperandBase BuildCallMarker() =>
+                methodInfo is MethodInfo callMi && conventions.TryGetValue(callMi, out var convention)
+                    ? new ProcedureCall(callMi, procedureNumbers[callMi], convention)
+                    : new IntrinsicFunctionCall(callTarget, false);
+
+            if (isVoid)
             {
-                tacInstruction =
-                    new TacInstruction(
-                        Operand.Call,
-                        arguments.Prepend(new IntrinsicFunctionCall(callTarget, false)).ToArray());
-
+                tacInstruction = new TacInstruction(Operand.Call, arguments.Prepend(BuildCallMarker()).ToArray());
                 return true;
+            }
+
+            var tempRegister = $"t{tempCounter++}";
+            evaluationStack.Push(new SsaVariable(tempRegister));
+
+            if (methodInfo is MethodInfo mathMi && mathIntrinsics.TryGetValue(mathMi, out var mathOperand))
+            {
+                tacInstruction = new TacInstruction(tempRegister, mathOperand, arguments.ToArray());
             }
             else
             {
-                var tempRegister = $"t{tempCounter++}";
-                evaluationStack.Push(new SsaVariable(tempRegister));
-
-                if (callTarget == "Sin")
-                {
-                    tacInstruction = new TacInstruction(tempRegister, Operand.Sin, arguments.ToArray());
-                }
-                else
-                {
-                    tacInstruction =
-                        new TacInstruction(
-                            tempRegister,
-                            Operand.Call,
-                            arguments.Prepend(new IntrinsicFunctionCall(callTarget, false)).ToArray());
-                }
-
-                return true;
+                tacInstruction = new TacInstruction(tempRegister, Operand.Call, arguments.Prepend(BuildCallMarker()).ToArray());
             }
+
+            return true;
         }
         else if (opName == "ret")
         {

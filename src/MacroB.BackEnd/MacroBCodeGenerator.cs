@@ -88,9 +88,22 @@ public class MacroBCodeGenerator
     private readonly Dictionary<TacInstructionBlock, int> _sequenceNumberMap;
     private readonly Dictionary<int, TacInstructionBlock> _blockJumpTargetMap;
     private readonly BasicBlockOrderAnalysis _blockOrderAnalysis;
+    private readonly MacroVariableConfiguration _configuration;
+    private readonly IReadOnlyDictionary<string, NcStatementTemplate> _deviceIntrinsics;
+    private readonly int? _returnValueSlot;
 
-    public MacroBCodeGenerator(ControlFlowGraph<TacInstructionBlock> controlFlowGraph)
+    public MacroBCodeGenerator(
+        ControlFlowGraph<TacInstructionBlock> controlFlowGraph,
+        MacroVariableConfiguration configuration,
+        IReadOnlyDictionary<string, NcStatementTemplate> deviceIntrinsics,
+        int registerBase,
+        int? registerCount = null,
+        int? returnValueSlot = null)
     {
+        _configuration = configuration;
+        _deviceIntrinsics = deviceIntrinsics;
+        _returnValueSlot = returnValueSlot;
+
         var livenessAnalysis = LivenessAnalysis.Analyse(controlFlowGraph);
         var livenessRangeAnalysis = LivenessRangeAnalysis.Analyse(controlFlowGraph);
         var livenessRangeInterferenceAnalysis = LivenessRangeInterferenceAnalysis.Analyse(controlFlowGraph);
@@ -100,7 +113,13 @@ public class MacroBCodeGenerator
         _registerMap = controlFlowGraph.GetVariables()
                                        .ToDictionary(
                                            variable => variable,
-                                           variable => coloring[livenessRangeAnalysis.Ranges.Find(variable)] + 1);
+                                           variable => coloring[livenessRangeAnalysis.Ranges.Find(variable)] + registerBase);
+
+        if (registerCount.HasValue && _registerMap.Values.Count > 0 && _registerMap.Values.Max() >= registerBase + registerCount.Value)
+        {
+            throw new NotSupportedException(
+                $"This unit needs more registers ({_registerMap.Values.Max() - registerBase + 1}) than its allotted range ({registerCount} starting at {registerBase}) provides.");
+        }
 
         _sequenceNumberMap = _blockOrderAnalysis.BlockOrder.Index()
                                                 .ToDictionary(kvp => kvp.Item, kvp => 10 * (kvp.Index + 1));
@@ -123,6 +142,37 @@ public class MacroBCodeGenerator
             var argumentVariable = new SsaVariable($"arg_{argumentIndex}");
             sb.AppendLine($"{RenderOperand(argumentVariable)} = {arguments[argumentIndex].ToString()}");
         }
+
+        sb.Append(GenerateBlocksCode());
+
+        return sb.ToString();
+    }
+
+    public string GenerateProcedureCode(int programNumber, int parameterCount, MacroCallConvention convention)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine($"O{programNumber}");
+
+        for (var i = 0; i < parameterCount; ++i)
+        {
+            var argumentVariable = new SsaVariable($"arg_{i}");
+            var sourceVariable = convention switch
+            {
+                MacroCallConvention.SubProgramCall => _configuration.ArgumentBaseVariable + i,
+                MacroCallConvention.MacroCallStyle1 => MacroCallStyle1Arguments.Positions[i].LocalVariable,
+                _ => throw new NotSupportedException(
+                    $"GenerateProcedureCode does not support convention {convention}.")
+            };
+            sb.AppendLine($"{RenderOperand(argumentVariable)} = #{sourceVariable}");
+        }
+
+        sb.Append(GenerateBlocksCode());
+        return sb.ToString();
+    }
+
+    private string GenerateBlocksCode()
+    {
+        var sb = new StringBuilder();
 
         for (var i = 0; i < _blockOrderAnalysis.BlockOrder.Count; ++i)
         {
@@ -147,6 +197,12 @@ public class MacroBCodeGenerator
 
         foreach (var instruction in block.BodyInstructions)
         {
+        if (instruction.Op == Operand.Call && instruction.Arguments.FirstOrDefault() is ProcedureCall)
+        {
+            sb.Append(RenderProcedureCall(instruction));
+            continue;
+        }
+
             if (instruction.Destination is SsaVariable destination)
             {
                 sb.Append($"#{_registerMap[destination]} = ");
@@ -175,6 +231,10 @@ public class MacroBCodeGenerator
                 case Operand.Pow:
                     sb.AppendLine(RenderPowExpression(instruction.Arguments.First(), instruction.Arguments.Last()));
                     break;
+            case Operand.ATan2:
+                sb.AppendLine(RenderAtan2Expression(instruction.Arguments.First(), instruction.Arguments.Last()));
+                break;
+
 
                 case Operand.Sin:
                 case Operand.Cos:
@@ -319,6 +379,10 @@ public class MacroBCodeGenerator
                     break;
 
                 case Operand.Ret:
+                    if (_returnValueSlot is int slot && branchInstruction.Arguments.Count > 0)
+                    {
+                        sb.AppendLine($"#{slot} = {RenderOperand(branchInstruction.Arguments.Single())}");
+                    }
                     sb.AppendLine("M99");
                     break;
 
@@ -372,6 +436,46 @@ public class MacroBCodeGenerator
         return $"POW[{RenderOperand(baseValue)},{RenderOperand(exponent)}]";
     }
 
+    private string RenderAtan2Expression(OperandBase numerator, OperandBase denominator)
+    {
+        return $"ATAN[{RenderOperand(numerator)}]/[{RenderOperand(denominator)}]";
+    }
+
+    private string RenderProcedureCall(TacInstruction instruction)
+    {
+        var procedureCall = (ProcedureCall)instruction.Arguments[0];
+        var callArguments = instruction.Arguments.Skip(1).ToList();
+        var sb = new StringBuilder();
+
+        switch (procedureCall.Convention)
+        {
+            case MacroCallConvention.SubProgramCall:
+                for (var i = 0; i < callArguments.Count; ++i)
+                {
+                    sb.AppendLine($"#{_configuration.ArgumentBaseVariable + i} = {RenderOperand(callArguments[i])}");
+                }
+                sb.AppendLine($"M98 P{procedureCall.ProgramNumber}");
+                break;
+
+            case MacroCallConvention.MacroCallStyle1:
+                var letterArgs = callArguments
+                    .Select((arg, i) => $"{MacroCallStyle1Arguments.Positions[i].Letter}{RenderOperand(arg)}");
+                sb.AppendLine($"G65 P{procedureCall.ProgramNumber} {string.Join(" ", letterArgs)}".TrimEnd());
+                break;
+
+            default:
+                throw new NotSupportedException(
+                    $"ProcedureCall convention {procedureCall.Convention} is not supported by code generation.");
+        }
+
+        if (instruction.Destination is SsaVariable destination)
+        {
+            sb.AppendLine($"#{_registerMap[destination]} = #{_configuration.ReturnValueVariable}");
+        }
+
+        return sb.ToString();
+    }
+
     private string RenderInfixExpression(Operand op, OperandBase left, OperandBase right)
     {
         return $"{RenderChild(left, op, isRightOperand: false)}{_binaryOperatorSymbols[op]}{RenderChild(right, op, isRightOperand: true)}";
@@ -405,19 +509,12 @@ public class MacroBCodeGenerator
 
     private string RenderNcStatement(TacInstruction callInstruction)
     {
-        var functionNameMap = new List<NcStatement>
-        {
-            new StartCoolantStatement(),
-            new StopCoolantStatement(),
-            new MoveStatement()
-        }.ToDictionary(statement => statement.Name);
-
         Debug.Assert(callInstruction.Op == Operand.Call);
 
         if (callInstruction.Arguments.First() is IntrinsicFunctionCall intrinsicFunctionCall)
         {
-            return
-                $"{functionNameMap[intrinsicFunctionCall.FunctionName].Render(callInstruction.Arguments.Skip(1).Select(RenderNcArgument))}";
+            return _deviceIntrinsics[intrinsicFunctionCall.FunctionName]
+               .Render(callInstruction.Arguments.Skip(1).Select(RenderNcArgument));
         }
 
         throw new InvalidOperationException();
@@ -445,54 +542,21 @@ public class MacroBCodeGenerator
     }
 }
 
-internal abstract class NcStatement
+// Data-only description of the ISO block (G/M-code plus positional word-address letters, e.g.
+// X/Y/Z/F for a Move) a device intrinsic renders to. Owned and built by the front-end
+// (MacroB.Host.FrontEnd.CncDeviceIntrinsics.Map), mirroring how CncMathIntrinsics.Map owns the
+// Cnc.Math-method-to-Operand mapping; the code generator only knows how to turn a template plus
+// already-rendered argument text into Macro B text, it never hardcodes which intrinsic maps to
+// which G/M-code.
+public sealed record NcStatementTemplate(string Code, IReadOnlyList<string> ArgumentLetters)
 {
-    private protected NcStatement(string name)
+    public string Render(IEnumerable<string> arguments)
     {
-        Name = name;
-    }
+        if (ArgumentLetters.Count == 0)
+        {
+            return Code;
+        }
 
-    public string Name { get; }
-
-    public abstract string Render(IEnumerable<string> arguments);
-}
-
-internal sealed class MoveStatement : NcStatement
-{
-    public MoveStatement()
-        : base("Move") { }
-
-    public string GCode => "G01";
-
-    public override string Render(IEnumerable<string> arguments)
-    {
-        var parameters = new[] { "X", "Y", "Z", "F" };
-        return $"{GCode} {string.Join(" ", parameters.Zip(arguments, (p, a) => p + a))}";
-    }
-}
-
-internal sealed class StopCoolantStatement : NcStatement
-{
-    public StopCoolantStatement()
-        : base("StopCoolant") { }
-
-    public string MCode => "M39";
-
-    public override string Render(IEnumerable<string> arguments)
-    {
-        return MCode;
-    }
-}
-
-internal sealed class StartCoolantStatement : NcStatement
-{
-    public StartCoolantStatement()
-        : base("StartCoolant") { }
-
-    public string MCode => "M35";
-
-    public override string Render(IEnumerable<string> arguments)
-    {
-        return MCode;
+        return $"{Code} {string.Join(" ", ArgumentLetters.Zip(arguments, (letter, argument) => letter + argument))}";
     }
 }

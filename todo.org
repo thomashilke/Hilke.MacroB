@@ -15,3 +15,12 @@
 9. Read/Write ordering? Memory fence?
 10. Simulation/Unit testing?
 
+
+
+- [ ] Detect and reconstruct high-level `IF` blocks and `WHILE` loops.
+- [ ] Implement function calls as subprograms (`G65`, `M98`).
+- [ ] Implement whole program optimization (fallthrough simplification).
+- [ ] Add logging and debugging support (PDB source mapping).
+- [ ] Implement synchronous communication channels (`G300` etc.).
+- [ ] Simulation and expanded unit testing.
+- [ ] Support for subprogram argument initialization.
